@@ -46,4 +46,6 @@ Group is
 	lang/parse.sml
 	lang/bv-test.sml
 
+	top/io.sml
+
 	top/top.sml
