@@ -28,9 +28,51 @@ struct
                of s :: _ => ref s
                 | _ => raise Fail "no solvers"
   
+  val ops : BV.operator list ref = ref []
+  val len : int ref = ref 30
+  
   val options = [{short = "v", long=["verbose"], 
                   desc=G.NoArg (fn () => Flag.set Flags.verbose),
-                  help="verbose messages"}
+                  help="verbose messages"},
+                 {short = "", long = ["has-not"],
+                  desc=G.NoArg (fn () => ops := BV.O_Unop BV.Not :: !ops),
+                  help=""},
+                 {short = "", long = ["has-shl1"],
+                  desc=G.NoArg (fn () => ops := BV.O_Unop BV.Shl1 :: !ops),
+                  help=""},
+                 {short = "", long = ["has-shr1"],
+                  desc=G.NoArg (fn () => ops := BV.O_Unop BV.Shr1 :: !ops),
+                  help=""},
+                 {short = "", long = ["has-shr4"],
+                  desc=G.NoArg (fn () => ops := BV.O_Unop BV.Shr4 :: !ops),
+                  help=""},
+                 {short = "", long = ["has-shr16"],
+                  desc=G.NoArg (fn () => ops := BV.O_Unop BV.Shr16 :: !ops),
+                  help=""},
+                 {short = "", long = ["has-and"],
+                  desc=G.NoArg (fn () => ops := BV.O_Binop BV.And :: !ops),
+                  help=""},
+                 {short = "", long = ["has-or"],
+                  desc=G.NoArg (fn () => ops := BV.O_Binop BV.Or :: !ops),
+                  help=""},
+                 {short = "", long = ["has-xor"],
+                  desc=G.NoArg (fn () => ops := BV.O_Binop BV.Xor :: !ops),
+                  help=""},
+                 {short = "", long = ["has-plus"],
+                  desc=G.NoArg (fn () => ops := BV.O_Binop BV.Plus :: !ops),
+                  help=""},
+                 {short = "", long = ["has-if0"],
+                  desc=G.NoArg (fn () => ops := BV.O_Ifz :: !ops),
+                  help=""},
+                 {short = "", long = ["has-tfold"],
+                  desc=G.NoArg (fn () => ops := BV.O_Tfold :: !ops),
+                  help=""},
+                 {short = "", long = ["has-fold"],
+                  desc=G.NoArg (fn () => ops := BV.O_Fold :: !ops),
+                  help=""},
+                 {short = "l", long = ["length"],
+                  desc=G.ReqArg (fn s => len := (valOf $ Int.fromString s), "length"),
+                  help=""}
                 ] 
                 @
                 map
@@ -54,16 +96,12 @@ struct
   
   fun main (name, args) =
       let
-        val header = "Usage: solve [OPTION...] SOURCEFILE\nwhere OPTION is"
+        val header = "Usage: solve PARAM...\nwhere PARAM is"
         val usageinfo = G.usageInfo {header = header, options = options}
         fun errfn msg = (say (msg ^ "\n" ^ usageinfo) ; raise EXIT)
 
         (* val _ = Temp.reset (); (* reset temp variable counter *) *)
         val _ = Flags.reset (); (* return all flags to default value *)
-
-        val _ = if List.length args = 0 then
-                    (say usageinfo; raise EXIT)
-                else ()
 
         val (opts, files) =
             G.getOpt {argOrder = G.Permute,
@@ -71,35 +109,17 @@ struct
                       errFn = errfn}
                      args
 
-        val source =
+        val _ = if List.length (!ops) = 0 then
+                    errfn "no ops?"
+                else ()
+
+        val () =
             case files
-              of [] => errfn "Error: no input file"
-               | [filename] => filename
-               | _ => errfn "Error: more than one input file"
+              of [] => ()
+               | _ => errfn "excessive arguments (when did Joshua walk back in?)"
 
+        val () = #f (!solver) {size = !len, ops = !ops }
 
-(*
-        val _ = Flag.guard Flags.verbose say ("Enabled optimizations: " ^ String.concat (map (fn x => (#shortname x) ^ " ") (!enabledopts)))
-*)
-(*        val _ = Flag.guard Flags.verbose say ("Parsing... " ^ source)
-        val ast = Parse.parse source
-        val (_, funcs) = ast
-        val _ = Flag.guard Flags.ast
-                  (fn () => say (Ast.Print.pp_program ast)) ()
-
-        val _ = Flag.guard Flags.verbose say "Checking..."
-        val ast = TypeChecker.typecheck ast
-
-        val _ = Flag.guard Flags.verbose say "Translating..."
-        val ir = Trans.translate ast
-        val _ = Flag.guard Flags.ir (fn () => say (TreeUtils.Print.pp_program ir)) ()
-
-        val _ = Flag.guard Flags.verbose say "Performing CFA..."
-        val cf = Cfa.cfa ir
-
-        val _ = Flag.guard Flags.verbose say "Generating veriloog..."
-        val output = Verilate.verilate cf
-*)
 (*        val _ = print output *)
 (*
         val afname = stem source ^ ".v"
