@@ -13,5 +13,7 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 	top/flags.sml
 
+	lang/bv.sml
+
 	top/top.sml
 	top/top_mlton.sml

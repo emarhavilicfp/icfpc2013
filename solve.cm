@@ -37,4 +37,6 @@ Group is
 	verilate/verilate.sml
 *)
 
+	lang/bv.sml
+
 	top/top.sml
