@@ -84,5 +84,19 @@ struct
           "(" ^ show_binop oper ^ " " ^ show_expr e1 ^ " " ^ show_expr e2 ^ ")"
 
   fun show (Lambda (x,e)) = "(lambda (" ^ show_id x ^ ") " ^ show_expr e ^ ")"
+
+  (* computing AST size *)
+
+  fun size_expr Zero = 1
+    | size_expr One = 1
+    | size_expr (Id x) = 1
+    | size_expr (Ifz (e0,e1,e2)) =
+        1 + size_expr e0 + size_expr e1 + size_expr e2
+    | size_expr (Fold (ev,e0,x,y,e)) =
+        2 + size_expr ev + size_expr e0 + size_expr e
+    | size_expr (Unop (oper,e)) = 1 + size_expr e
+    | size_expr (Binop (oper,e1,e2)) = 1 + size_expr e1 + size_expr e2
+
+  fun size (Lambda (x,e)) = 1 + size_expr e
 end
 

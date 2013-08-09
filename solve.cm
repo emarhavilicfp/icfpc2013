@@ -17,6 +17,8 @@ Group is
 
 	top/flags.sml
 
+	solve/brute.sml
+
 (*	type/type.sml
 	parse/ast.sml
 	parse/astutils.sml
