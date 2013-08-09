@@ -3,7 +3,7 @@
 require 'rubygems'
 
 require 'net/http'
-require 'JSON'
+require 'json'
 
 AUTHKEY = "0132X9AqfwFADPNaFAspP3eFjUdCx0fVpxWS6pHd"
 

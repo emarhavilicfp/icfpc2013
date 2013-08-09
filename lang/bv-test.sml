@@ -19,11 +19,10 @@ struct
       assert_eq prog (Parse.parse (show prog)) str
     end
 
-    fun make_ident s = Ident (Symbol.symbol s)
   in
-    test_from_prog (Lambda ((make_ident "x"), (Id (make_ident "x"))));
+    test_from_prog (Lambda ((Symbol.symbol "x"), (Id (Symbol.symbol "x"))));
     test_from_str  "(lambda (x) x)";
-    test_from_prog (Lambda ((make_ident "x"), (Binop (Plus,(Id (make_ident "x")),(Id (make_ident "x"))))));
+    test_from_prog (Lambda ((Symbol.symbol "x"), (Binop (Plus,(Id (Symbol.symbol "x")),(Id (Symbol.symbol "x"))))));
     ()
   end
   
