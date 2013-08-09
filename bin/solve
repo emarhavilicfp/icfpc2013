@@ -1,0 +1,2 @@
+eval $($(dirname $(readlink $(which sml)))/.arch-n-opsys)
+sml @SMLcmdname=$0 @SMLload=bin/solve.heap.$HEAP_SUFFIX $*

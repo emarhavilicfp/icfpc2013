@@ -1,0 +1,40 @@
+Group is	
+        $/basis.cm
+	$/smlnj-lib.cm
+	$/ml-yacc-lib.cm
+
+	top/smlnj-specific.sml
+
+	util/mark.sml
+	util/flag.sml
+	util/symbol.sml
+	util/errormsg.sml
+        util/safe-io.sml
+        util/word32.sml
+
+	top/flags.sml
+
+(*	type/type.sml
+	parse/ast.sml
+	parse/astutils.sml
+	parse/parsestate.sml
+	parse/l6.lex
+	parse/l6.grm
+	parse/parse.sml
+
+	type/typechecker.sml
+
+	trans/temp.sml
+        trans/label.sml
+	trans/tree.sml
+	trans/treeutils.sml
+	trans/trans.sml
+
+        optimize/optimizer.sml
+	optimize/constfold.sml
+
+	verilate/cfa.sml
+	verilate/verilate.sml
+*)
+
+	top/top.sml

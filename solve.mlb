@@ -1,0 +1,17 @@
+$(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+
+	top/mlton-specific.sml
+
+	util/mark.sml
+	util/flag.sml
+	util/symbol.sml
+	util/errormsg.sml
+        util/safe-io.sml
+        util/word32.sml
+
+	top/flags.sml
+
+	top/top.sml
+	top/top_mlton.sml
