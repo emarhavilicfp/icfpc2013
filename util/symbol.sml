@@ -13,7 +13,7 @@
 
 signature SYMBOL =
 sig
-  type symbol
+  eqtype symbol
   val compare : symbol * symbol -> order (* compare symbols by their creation time 
 					  * GREATER if they can not be compared
 					  *)

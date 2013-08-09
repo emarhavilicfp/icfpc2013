@@ -1,7 +1,7 @@
 (* BV language definition *)
 signature BV =
 sig
-  datatype id = Ident of string
+  datatype id = Ident of Symbol.symbol
 
   datatype unop = Not | Shl1 | Shr1 | Shr4 | Shr16
 
@@ -26,7 +26,7 @@ end
 structure BV : BV = 
 struct
 
-  datatype id = Ident of string
+  datatype id = Ident of Symbol.symbol
  
   datatype unop = Not | Shl1 | Shr1 | Shr4 | Shr16
 
@@ -46,7 +46,7 @@ struct
 
   (* Programs -> Text *)
 
-  fun show_id (Ident s) = s
+  fun show_id (Ident id) = Symbol.name id
 
   fun show_unop Not   = "not"
     | show_unop Shl1  = "shl1"
