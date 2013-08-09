@@ -12,19 +12,14 @@ sig
    *)
   val main : string * string list -> OS.Process.status
   
-  (* test "arguments"; is the same as executing a saved
-   * heap with arguments on the command line
-   *)
-  val test : string -> OS.Process.status
+  val check : string * string list -> OS.Process.status
 end
 
 structure Top :> TOP =
 struct
   structure G = GetOpt  (* from $/smlnj-lib/Util/getopt-sig.sml *)
-
-  fun say s = TextIO.output (TextIO.stdErr, s ^ "\n")
-
-  fun newline () = TextIO.output (TextIO.stdErr, "\n")
+  open Assert
+  open Haskell
 
   exception EXIT
   
@@ -91,6 +86,7 @@ struct
                | [filename] => filename
                | _ => errfn "Error: more than one input file"
 
+
 (*
         val _ = Flag.guard Flags.verbose say ("Enabled optimizations: " ^ String.concat (map (fn x => (#shortname x) ^ " ") (!enabledopts)))
 *)
@@ -128,5 +124,20 @@ struct
            | ErrorMsg.InternalError s => ( say ("Internal compiler error: "^s^"\n"); OS.Process.failure)
            | e => (say ("Unrecognized exception " ^ exnMessage e); OS.Process.failure)
 
-  fun test s = main ("", String.tokens Char.isSpace s)
+
+  fun check _ = let
+    val tests = [(BV_Test.test, "BV_Test")]
+          : ((unit -> bool) * string) list
+    fun run_test (testfn, name) = let
+      val _ = say_nonewline $ name ^ "... "
+      val r = testfn()
+      val _ = if r then say_green "%% OK %%" else say_red "!! FAIL !!"
+    in r
+    end
+  in
+    if List.all run_test tests then
+      (say_green "all tests passed"; OS.Process.success)
+    else
+      (say_red "(╯°□°）╯︵ ┻━┻"; OS.Process.failure)
+  end
 end
