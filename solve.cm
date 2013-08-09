@@ -45,5 +45,6 @@ Group is
 	lang/bv.grm
 	lang/parse.sml
 	lang/bv-test.sml
+    lang/evaluator.sml
 
 	top/top.sml
