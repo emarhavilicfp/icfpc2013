@@ -5,30 +5,144 @@
 - f' : Our hypothesis.  (We would like this to be everywhere-identical to f.)
 - x : An input (a 64-bit bitvector)
 - y : An output (a 64-bit bitvector)
+- (x, f(x)) : An "example" from f.
+
+
+** Main program loop
+
+Approach:
+
+- Be conservative at first and only try to solve one f at a time.
+  Once we have a database we can worry about several at a time.
+
+- Use an ensemble of techniques that generate guesses f'.  Some
+  specialized / very heuristic, at least one general.
+
+- Expect the general method to need the most perf work and to be the
+  main source of wisdom.  Ultimately teams will win by
+  pruned/restricted exhaustive search over the space of ASTs.
+
+Sketch:
+
+1. Obtain examples.
+
+   Maybe the solvers in the ensemble will have specific examples
+   they'd like to have, but begin with something simple: request some
+   points that you always want (so you get coverage in your local
+   program database), then ask for random bitvectors (to thwart
+   adversarial server responses).
+
+2. Prune.
+
+   Look at your existing database of programs that you've generated to
+   this point for whatever reason.  Throw out all the programs that
+   are sufficiently inconsistent with examples obtained.
+
+   Note that just because one of your programs is at all inconsistent
+   with a single example you still shouldn't prune it, because maybe
+   one of your solvers can use it + small fuzz to get to a good
+   program.
+
+   So we need some decent pruning criterion.  Something like "the
+   output of this program f' appears to be bounded below by y' and
+   here we have an example where f(x) is far less than y', so throw it
+   out."
+
+   (Of course, see if these pruning criteria even work empirically on
+   our training set.  E.g., if a bunch of these programs are
+   bit-twiddling and folding and using nontrivial control flow, then
+   they will look highly non-smooth and so a lower-bounding technique
+   becomes frequently unsound.)
+
+3. Solve
+
+   Query a bunch of solvers we have written.  See if any come up with
+   good stuff.
+
+4. Prune again.  In case #3 gave us noticeable junk.
+
+5. Submit (or just loop back).
+
+It isn't necessary that each of these happen in every loop iteration,
+e.g. #5.  Just ideas.
+
+
+** Hardcoded expert functions
+
+- Get into the organizers heads.  If you were writing programs to
+  guess rather than just generating at random, what would you write?
+
+- This might get us a few points if we get lucky and notice a function
+  matching an expert function of ours on all examples.
+
+- Some ideas for experts in \BV:
+
+  - Count (aka Hamming weight, or what have you).  The number of 1
+    bits in the vector.
+
+  - Count of 0s (i.e. 64 - count(x)).
+
+  - Bytewise-parity.  (i.e. fold input under xor.)
+
+  - Bitwise-parity.  (slightly harder.)
+
+  - Fold with add.  Use several initial accumulators.
+
+  - Fold with every other binop.  Use several initial accumulators.
+
+  - Really simple functions
+
+    (Even when the given opcount might be really high, that could be a
+    trap to mislead you to thinking f is inherently high-complexity.
+    There's no guarantee it doesn't just implement a function that is
+    everywhere constant.)
+
+    These could include:
+
+    - Constant functions
+    - Identity
+    - Simple if-then-else
+
+    These should probably always be in the bag so we don't miss them
+    if they happen.
+
 
 ** Subspace identification / specific solvers
 
-- Barring fold, these functions are always univariate.
+- Barring fold (and control flow sorta), these functions are always
+  univariate.  Guess: commonly they will be analytic / implement
+  simple algebraic expressions.
 
 - Here are common classes of univariate functions that are easy to
   solve for from just a few (x, f(x)) pairs.
 
+  - Piecewise constant.
+  - Constant functions.
   - Linear functions.
-  - Polynomials of any reasonable degree (subsumes linear functions).
+  - Piecewise linear functions.
+  - Polynomials of any reasonable degree (subsumes constant/linear functions).
   - Polynomials over GF(2) (for xor).
+
 
 ** Compositional generation and pruning
 
-We can generate hypotheses compositionally.  The benefits of this
-would be:
+We can generate hypotheses compositionally.
 
-- Reasonable and *general* method for generating (small) ASTs under
-  fixed upper bound on op count.
+- This would be (one of) our *general* "solvers".  It is a general way
+  to generating (small) ASTs under fixed upper bound on op count.
 
   - (A general method for hypothesis generation will be useful when we
     have no idea what the function structure is.  E.g., the target
     function isn't a linear arithmetic function or a polynomial or any
-    such easily recognizable structured subset of functions)
+    such easily recognizable structured subset of functions.)
+
+- Over the course of the challenge, can gradually build up a database
+  of known programs and their properties.  Can pick out any 1-3 of
+  these at any point and apply a grammar rule to compose a new
+  program.
+
+  - There should also be a mechanism for proposing new programs
+    (possibly via randomization).
 
 - For a cleverly chosen set of summary statistics, we could define
   sound compositional rules that bound or estimate summary statistics
