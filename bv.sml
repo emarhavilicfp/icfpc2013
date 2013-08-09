@@ -14,11 +14,11 @@ datatype expr = Zero
               (* fold e_vec e_init (\x_element x_accum -> e_step) *)
               | Fold of expr * expr * id * id * expr
               | Unop of unop * expr
-              | Binop of binop * expr
+              | Binop of binop * expr * expr
 
 datatype program = Lambda of id * expr
 
-
+(* Programs -> Text *)
 
 fun show_id (Ident s) = s
 
@@ -41,8 +41,37 @@ fun show_expr Zero = "0"
   | show_expr (Fold (ev,e0,x,y,e)) =
         "(fold " ^ show_expr ev ^ " " ^ show_expr e0
         ^ " (lambda (" ^ show_id x ^ " " ^ show_id y ^ ") " ^ show_expr e ^ ")"
-  | show_expr (Unop  (oper,e)) = "(" ^ show_unop  oper ^ " " ^ show_expr e ^ ")"
-  | show_expr (Binop (oper,e)) = "(" ^ show_binop oper ^ " " ^ show_expr e ^ ")"
+  | show_expr (Unop (oper,e)) = "(" ^ show_unop oper ^ " " ^ show_expr e ^ ")"
+  | show_expr (Binop (oper,e1,e2)) =
+        "(" ^ show_binop oper ^ " " ^ show_expr e1 ^ " " ^ show_expr e2 ^ ")"
 
 fun show_program (Lambda (x,e)) = "(lambda (" ^ show_id x ^ ") " ^ show_expr e ^ ")"
 
+(* Text -> Programs *)
+
+fun parse_program _ = (Lambda ((Ident "x"), (Id (Ident "x")))) (* TODO implement *)
+
+(* Pretty printer tests *)
+
+fun test () = let
+  fun assert_eq x y msg =
+    print (if x = y then "\027[01;32m%% OK %%\027[00m\n"
+           else "\027[01;31m!! FAIL: " ^ msg ^ " !!\027[00m\n")
+  (* tests AST -> str -> AST is a fixpoint *)
+  fun test_from_prog prog = let
+    val str = show_program prog
+  in
+    assert_eq prog (parse_program str) str
+  end
+  (* tests str -> AST -> str -> AST is a fixpoint *)
+  fun test_from_str str = let
+    val prog = parse_program str
+  in
+    assert_eq prog (parse_program (show_program prog)) str
+  end
+in
+  test_from_prog (Lambda ((Ident "x"), (Id (Ident "x"))));
+  test_from_str  "(lambda (x) x)";
+  test_from_prog (Lambda ((Ident "x"), (Binop (Plus,(Id (Ident "x")),(Id (Ident "x"))))));
+  ()
+end
