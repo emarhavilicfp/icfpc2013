@@ -5,6 +5,8 @@ Group is
 
 	top/smlnj-specific.sml
 
+	util/haskell.sml
+
 	util/mark.sml
 	util/flag.sml
 	util/symbol.sml

@@ -4,6 +4,8 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 	top/mlton-specific.sml
 
+	util/haskell.sml
+
 	util/mark.sml
 	util/flag.sml
 	util/symbol.sml
