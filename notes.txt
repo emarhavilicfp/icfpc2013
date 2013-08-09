@@ -1,0 +1,60 @@
+
+** Terminology
+
+- f : The target function. (What we are trying to guess.)
+- f' : Our hypothesis.  (We would like this to be everywhere-identical to f.)
+- x : An input (a 64-bit bitvector)
+- y : An output (a 64-bit bitvector)
+
+** Subspace identification / specific solvers
+
+- Barring fold, these functions are always univariate.
+
+- Here are common classes of univariate functions that are easy to
+  solve for from just a few (x, f(x)) pairs.
+
+  - Linear functions.
+  - Polynomials of any reasonable degree (subsumes linear functions).
+  - Polynomials over GF(2) (for xor).
+
+** Compositional generation and pruning
+
+We can generate hypotheses compositionally.  The benefits of this
+would be:
+
+- Reasonable and *general* method for generating (small) ASTs under
+  fixed upper bound on op count.
+
+  - (A general method for hypothesis generation will be useful when we
+    have no idea what the function structure is.  E.g., the target
+    function isn't a linear arithmetic function or a polynomial or any
+    such easily recognizable structured subset of functions)
+
+- For a cleverly chosen set of summary statistics, we could define
+  sound compositional rules that bound or estimate summary statistics
+  on a generated program from its two immediate sub-programs.
+
+  - This allows us to reuse information we've already deduced about
+    programs we've already generated as they are used as subprograms.
+
+- (Approximate) summary statistics can be good for reasoning /
+  pruning.
+
+  - Summary statistics are things we know about our function.
+
+    - Implicity any summary statistic is qualified over some set of
+      the input domain (i.e. "min value" is "min value over all x in
+      S" where S is a subset of {0,1}^64.
+
+  - Example (+):
+    - We have a summary statistic "min observed value"
+    - When combining two programs under the "+" grammar rule:
+      - (Assume no overflow)
+      - Min-observed-value of parent is max of min-observed-values of
+        children.
+      - Prune (don't even consider the parent program to be f') if
+        this min-observed-value exceeds f(x) for any x.
+
+  - Example (xor):
+    - We could even reason about composition under XOR by looking at
+      constantness/monotonicity of every bit position.
