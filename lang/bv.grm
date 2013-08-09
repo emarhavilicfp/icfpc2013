@@ -57,4 +57,4 @@ binop      : AND (BV.And)
            | XOR (BV.Xor)
            | PLUS (BV.Plus)
 
-id         : IDENT (BV.Ident (Symbol.symbol IDENT))
+id         : IDENT (Symbol.symbol IDENT)
