@@ -10,17 +10,21 @@ struct
   type word = Word64.word
 
   fun eval_fold G vec init e acc step =
-    case Word64.compare (vec, Word64.fromInt 0) of
-      EQUAL => init
-    | _ =>
-        let
-          val lowByte = Word64.andb (vec, Word64.fromInt 255)
-          val G' = Symbol.bind G (acc, init)
-          val G' = Symbol.bind G' (e, lowByte)
-          val e2 = eval_expr G' step
-        in
-          eval_fold G (Word64.>> (vec, Word31.fromInt 8)) e2 e acc step
-        end
+    let
+      fun fold' 0 res vec = res
+        | fold' n res vec =
+            let
+              val lowByte = Word64.andb (vec, 0wxFF)
+              val G' = Symbol.bind G (acc, res)
+              val G' = Symbol.bind G' (e, lowByte)
+              val res' = eval_expr G' step
+            in
+              fold' (n-1) res' (Word64.>> (vec, 0w8))
+            end
+    in
+      fold' 8 init vec
+    end
+  
   and eval_unop G BV.Not e = Word64.notb (eval_expr G e)
     | eval_unop G BV.Shl1 e = Word64.<< (eval_expr G e, Word31.fromInt 1)
     | eval_unop G BV.Shr1 e = Word64.>> (eval_expr G e, Word31.fromInt 1)
