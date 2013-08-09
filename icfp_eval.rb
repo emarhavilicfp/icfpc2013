@@ -121,6 +121,46 @@ def do_fold(val, acc, e, env)
   end
 end
 
+def parse(s)
+  result, leftovers = parse_helper(s)
+  return result
+end
+
+def parse_helper(s)
+  s = s.strip
+  if s[0..0] == '('
+    rv, s = parse_list(s[1..-1])
+  elsif s =~ /^[0-9]/
+    rv, s = parse_int(s[0..-1])
+  elsif s =~ /^[a-z]/
+    rv, s = parse_ident(s[0..-1])
+  else
+    raise "bad parse: #{s}"
+  end
+  return rv, s
+end
+
+def parse_list(s)
+  s = s.strip
+  if s[0..0] == ')'
+    return [], s[1..-1]
+  else
+    item, s = parse_helper(s)
+    rest, s = parse_list(s)
+    return [item] + rest, s
+  end
+end
+
+def parse_int(s)
+  s =~ /^([0-9]*)(.*)$/
+  return $~[1].to_i, $~[2]
+end
+
+def parse_ident(s)
+  s =~ /^([a-z0-9_]*)(.*)$/
+  return $~[1].to_sym, $~[2]
+end
+
 def lam
   var = gensym
   exp = yield var
@@ -148,7 +188,7 @@ end
 def fold(val, acc)
   var1 = gensym
   var2 = gensym
-  exp = yield (var1, var2)
+  exp = yield(var1, var2)
   [:fold, val, acc, [:lambda, [var1, var2], exp]]
 end
 
@@ -160,11 +200,11 @@ def icfp_run(p, args)
 end
 
 def icfp_eval(p, env)
-  puts "eval #{pretty p} in env #{pphash env}"
+  #puts "eval #{pretty p} in env #{pphash env}"
   if p.kind_of?(Fixnum)
     p
   elsif p.kind_of?(Symbol)
-    puts "p #{p} class #{p.class} env[p] #{env[p]}"
+    #puts "p #{p} class #{p.class} env[p] #{env[p]}"
     env[p]
   elsif p.kind_of?(Array)
     if OPS1.has_key?(p[0])
@@ -185,6 +225,7 @@ def brute_1op(env, ops)
   
 end
 
+=begin
 p = lam do |x|
   op1 :shl1, x
 end
@@ -204,3 +245,20 @@ end
 puts pretty p1
 
 puts icfp_run(p1, [0x1122334455667788])
+
+x = parse('(lambda (x_78402) (fold x_78402 1 (lambda (x_78403 x_78404) (plus (or (xor x_78403 (shr4 (shr1 (shr1 (or (or (if0 (and (plus (plus x_78403 (not x_78404)) (shr1 x_78403)) x_78403) x_78404 x_78403) x_78403)x_78403))))) x_78404) x_78404))))')
+
+puts pretty x
+
+icfp_run(x, [0x2, 0x4, 0x8, 0x863, 0x932, 0x176, 0x183, 0x919484, 0x846394762]).map{|x| puts x.to_s(16)}
+=end
+
+puts "Enter program followed by HEX inputs (one per line) followed by EOF."
+
+lines = STDIN.read.split("\n")
+program = lines.shift
+args = lines.map{|x| x.to_i(16)}
+
+program = parse(program)
+icfp_run(program, args).map{|x| puts "0x#{x.to_s(16)}"}
+
