@@ -40,5 +40,10 @@ Group is
 *)
 
 	lang/bv.sml
+	lang/parsestate.sml
+	lang/bv.lex
+	lang/bv.grm
+	lang/parse.sml
+	lang/bv-test.sml
 
 	top/top.sml

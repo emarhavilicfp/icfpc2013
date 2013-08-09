@@ -1,0 +1,60 @@
+(* L1 Compiler
+ * L1 grammar
+ * Author: Kaustuv Chaudhuri <kaustuv+@cs.cmu.edu>
+ * Modified: Frank Pfenning <fp@cs.cmu.edu>
+ *)
+
+%%
+%header (functor BVLrValsFn (structure Token : TOKEN))
+
+%term 
+   LPAREN | RPAREN |
+   LAMBDA |
+   IDENT of string |
+   ZERO | 
+   ONE | 
+   IF0 | 
+   FOLD |
+   NOT | SHL1 | SHR1 | SHR4 | SHR16 |
+   AND | OR | XOR | PLUS |
+   EOF
+
+%nonterm 
+   program of BV.program
+ | expr of BV.expr
+ | binop of BV.binop
+ | unop of BV.unop
+ | id of BV.id
+
+%verbose                                (* print summary of errors *)
+%pos int                                (* positions *)
+%start program
+%eop EOF
+%noshift EOF
+
+%name BV
+
+%%
+
+program    : LPAREN LAMBDA LPAREN id RPAREN expr RPAREN (BV.Lambda (id, expr))
+
+expr       : ZERO                  (BV.Zero)
+           | ONE                   (BV.One)
+           | id                    (BV.Id (id))
+           | LPAREN IF0 expr expr expr RPAREN (BV.Ifz (expr1, expr2, expr3))
+           | LPAREN FOLD expr expr LPAREN LAMBDA LPAREN id id RPAREN expr RPAREN RPAREN (BV.Fold (expr1, expr2, id1, id2, expr3))
+           | LPAREN unop expr RPAREN (BV.Unop (unop, expr))
+           | LPAREN binop expr expr RPAREN (BV.Binop (binop, expr1, expr2))
+
+unop       : NOT (BV.Not)
+           | SHL1 (BV.Shl1)
+           | SHR1 (BV.Shr1)
+           | SHR4 (BV.Shr4)
+           | SHR16 (BV.Shr16)
+
+binop      : AND (BV.And)
+           | OR (BV.Or)
+           | XOR (BV.Xor)
+           | PLUS (BV.Plus)
+
+id         : IDENT (BV.Ident (IDENT))

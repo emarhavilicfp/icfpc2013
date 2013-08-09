@@ -5,6 +5,7 @@ solve: FORCE
 	echo 'use "compile-solve.sml";' | ${SML}
 
 solve-mlton: FORCE
+	@echo "Oh no you didn't!"; exit 1
 	mlton -profile time -profile-branch true -output bin/solve-mlton sources.mlb
 
 reallyclean: clean
