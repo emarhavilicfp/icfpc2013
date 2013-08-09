@@ -1,9 +1,9 @@
 HEAP_SUFFIX=x86-linux
-if [ -f $(dirname $(readlink $(which sml)))/.arch-n-opsys ]; then
-	eval $($(dirname $(readlink $(which sml)))/.arch-n-opsys)
-fi
-
-if [ -f $(dirname $(which sml))/.arch-n-opsys ]; then
+if [ ! -z "$(readlink $(which sml))" ]; then
+	if [ -f $(dirname $(readlink $(which sml)))/.arch-n-opsys ]; then
+		eval $($(dirname $(readlink $(which sml)))/.arch-n-opsys)
+	fi
+elif [ -f $(dirname $(which sml))/.arch-n-opsys ]; then
 	eval $($(dirname $(which sml))/.arch-n-opsys)
 fi
 
