@@ -48,6 +48,8 @@ Group is
 	lang/bv-test.sml
     lang/evaluator.sml
 
+	top/solver.sml
+
 	top/io.sml
 
 	top/top.sml

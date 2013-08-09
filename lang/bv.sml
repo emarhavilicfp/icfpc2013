@@ -16,6 +16,12 @@ sig
                 | Fold of expr * expr * id * id * expr
                 | Unop of unop * expr
                 | Binop of binop * expr * expr
+  
+  datatype operator = O_Unop of unop
+                    | O_Binop of binop
+                    | O_Ifz
+                    | O_Tfold
+                    | O_Fold
 
   datatype program = Lambda of id * expr
 
@@ -41,6 +47,12 @@ struct
                 | Fold of expr * expr * id * id * expr
                 | Unop of unop * expr
                 | Binop of binop * expr * expr
+
+  datatype operator = O_Unop of unop
+                    | O_Binop of binop
+                    | O_Ifz
+                    | O_Tfold
+                    | O_Fold
 
   datatype program = Lambda of id * expr
 

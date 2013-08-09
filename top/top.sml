@@ -22,32 +22,23 @@ struct
   open Haskell
 
   exception EXIT
-  
-(*  val alloptimizations =
-    [ConstantFold.optimizer]
 
-  val enabledopts = ref alloptimizations
-*)
+  val solvers = [Solver.TotalNobe]
+  val solver = case solvers
+               of s :: _ => ref s
+                | _ => raise Fail "no solvers"
+  
   val options = [{short = "v", long=["verbose"], 
                   desc=G.NoArg (fn () => Flag.set Flags.verbose),
-                  help="verbose messages"},
-                 {short = "a", long=["dump-ast"],
-                  desc=G.NoArg (fn () => Flag.set Flags.ast),
-                  help="pretty print the AST"},
-                 {short = "i", long=["dump-ir"],
-                  desc=G.NoArg (fn () => Flag.set Flags.ir),
-                  help="pretty print the IR"}
+                  help="verbose messages"}
                 ] 
-                
-                (* @
+                @
                 map
-                  (fn (opt : Optimizer.optimization) =>
-                    { short = "", long=["disable-" ^ (#shortname opt)],
-                      desc = G.NoArg (* This is nasty. *)
-                        (fn () => enabledopts := List.filter (fn x => (#shortname x) <> (#shortname opt)) (!enabledopts)),
-                      help = "disable optimization: " ^ (#description opt) })
-                  alloptimizations
-                *)
+                  (fn (s: Solver.solver) =>
+                    { short = "", long=["use-" ^ (#shortname s)],
+                      desc = G.NoArg (fn () => solver := s),
+                      help = "solution made by the "^(#name s)^" strategy" })
+                  solvers
 
   fun stem s =
       let
@@ -63,7 +54,7 @@ struct
   
   fun main (name, args) =
       let
-        val header = "Usage: compile [OPTION...] SOURCEFILE\nwhere OPTION is"
+        val header = "Usage: solve [OPTION...] SOURCEFILE\nwhere OPTION is"
         val usageinfo = G.usageInfo {header = header, options = options}
         fun errfn msg = (say (msg ^ "\n" ^ usageinfo) ; raise EXIT)
 
