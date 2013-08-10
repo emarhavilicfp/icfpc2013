@@ -50,14 +50,14 @@ def main
   example = do_train trainopts
 
   solver_args = "--length=#{example['size']} "
-  solver_args += example['operators'].map {|x| "--has-#{x}"}.join(" ")
+  solver_args += example['operators'].map {|x| "--has-#{x}-op"}.join(" ")
 
   def with_pipe(solver_args)
     if @options[:tty]
       puts "Args to solver would have been: #{solver_args}"
       yield File.open("/dev/tty", "r+")
     else
-      yield IO.popen "./solver #{solver_args}"
+      yield IO.popen "bin/solve #{solver_args}"
     end
   end
 
