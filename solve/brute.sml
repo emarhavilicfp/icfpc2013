@@ -147,7 +147,8 @@ struct
                 List.map (fn (x,y) =>
                             if x=y then
                               (* Optimize commutative binops here. *)
-                              allpairs_no_refl (smaller_exprs x, smaller_exprs y)
+                              (* XXX fix this *)
+                              allpairs (smaller_exprs x, smaller_exprs y)
                             else
                               allpairs (smaller_exprs x, smaller_exprs y))
                          (partition2 $ size-1)
