@@ -2,10 +2,11 @@
 SML = sml
 
 solve: FORCE
-	echo 'use "compile-solve.sml";' | ${SML}
+	#echo 'use "compile-solve.sml";' | ${SML}
+	ml-build solve.cm Top.main bin/solve.heap
 
 check: FORCE
-	echo 'use "compile-check.sml";' | ${SML}
+	ml-build solve.cm Top.check bin/check.heap
 	./bin/check
 
 solve-mlton: FORCE
