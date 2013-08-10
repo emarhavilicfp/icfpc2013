@@ -48,16 +48,22 @@ struct
     let
       fun allowed (O_Unop x) = SOME x
         | allowed _ = NONE
-      (* Same as maybe_add_op in add_binop below. "Shl1 Zero" is the canonical. *)
+      (* Same as maybe_add_op in add_binop below. "Zero" is the canonical zero. *)
       fun add_op_unless_id x = (case e of Zero => NONE | _ => SOME $ Unop(x,e))
       fun maybe_add_op Shl1  = add_op_unless_id Shl1
         | maybe_add_op Shr1  =
             (case e of One => NONE (* 1>>1 = 0 *)
-                     | (Unop (Shr1, Unop (Shr1, Unop (Shr1, _)))) => NONE (* shr4 *)
+                     | (Unop (Shr1, Unop (Shr1, Unop (Shr1, _)))) =>
+                         (* shr4 -- only if the op is in the set! *)
+                         if (List.exists (fn x => x = O_Unop Shr4) ops) then NONE
+                         else add_op_unless_id Shr1
                      | _ => add_op_unless_id Shr1)
         | maybe_add_op Shr4  =
             (case e of One => NONE (* 1>>4 = 0 *)
-                     | (Unop (Shr4, Unop (Shr4, Unop (Shr4, _)))) => NONE (* shr16 *)
+                     | (Unop (Shr4, Unop (Shr4, Unop (Shr4, _)))) =>
+                         (* shr16 -- only if the op is in the set! *)
+                         if (List.exists (fn x => x = O_Unop Shr16) ops) then NONE
+                         else add_op_unless_id Shr4
                      | _ => add_op_unless_id Shr4)
         | maybe_add_op Shr16 =
             if e = One then NONE (* 1>>16 = 0 *)
@@ -71,10 +77,10 @@ struct
     let
       fun allowed (O_Binop x) = SOME x
         | allowed _ = NONE
-      (* Some peephole optimizations. For example, we emit one canonical "identity"
-      * binop-expr, "not not e". Hence "or 0 e" and "plus 0 e" and "xor 0 e" are
-      * redundant. (NB. We CANNOT canonicalize "op x (op y z)" to "op (op x y)
-      * z" because 'partition' doesn't emit size-pairs that are lopsided that way. *)
+      (* Some peephole optimizations. For example, we don't emit "identity"
+       * binary expressions because the expression itself will already have been
+       * emitted in the smaller list. Similarly we don't emit expressions that
+       * we know evaluate to zero or one, or can be expressed a different way. *)
       fun add_op_unless_id x =
         (case (e1,e2) of (Zero,Zero) => NONE | (Zero,_) => NONE | (_,Zero) => NONE
                        | _ => SOME $ Binop(x,e1,e2))
@@ -82,7 +88,8 @@ struct
             if e1 = One andalso e2 = One then NONE (* or 1 1 = 1 *)
             else add_op_unless_id Or
         | maybe_add_op Plus =
-            if e1 = e2 then NONE (* plus e e = e<<1 *)
+            (* plus e e = e<<1 -- only if the op is in the set! *)
+            if e1 = e2 andalso (List.exists (fn x => x = O_Binop Plus) ops) then NONE
             else add_op_unless_id Plus
         | maybe_add_op Xor  =
             if e1 = e2 then NONE (* xor e e = 0 *)
@@ -120,6 +127,7 @@ struct
   (* danger, combinatorics *)
   fun allpairs (xs: 'a list, ys: 'a list) : ('a * 'a) list =
     List.concat $ List.map (fn x => List.map (fn y => (x,y)) ys) xs
+  (* FIXME, I am broken *)
   fun allpairs_no_refl (xs: expr list, ys: expr list) : (expr * expr) list =
     List.concat $
       List.map (fn x => List.mapPartial
