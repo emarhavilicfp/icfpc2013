@@ -34,7 +34,7 @@ struct
       let
         open TextIO
       in
-        print ("GUESS "^(Int.toString (length args)) ^ "\n");
+        print ("EVAL:"^(Int.toString (length args)) ^ "\n");
         foldl (fn (n, _) => print ((Word64.fmt StringCvt.HEX n) ^ "\n")) () args;
         case inputLine stdIn
         of SOME "OKAY\n" =>
