@@ -149,6 +149,6 @@ struct
     if List.all run_test tests then
       (say_green "all tests passed"; OS.Process.success)
     else
-      (say_red "(╯°□°）╯︵ ┻━┻"; OS.Process.failure)
+      (say_red "some tests failed :-("; OS.Process.failure)
   end
 end
