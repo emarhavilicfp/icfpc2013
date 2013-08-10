@@ -98,7 +98,7 @@ struct
              | ServerIO.WRONG { input = inp,
                                 exp = exp,
                                 ours = ours } =>
-               rep (narrow ps (exp :: inputs))
+               rep (narrow ps (inp :: inputs))
           end
 
       val res = rep (Separated (Brute.generate a))
