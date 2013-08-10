@@ -53,6 +53,7 @@ Group is
 	lang/parse.sml
 	lang/bv-test.sml
     lang/evaluator.sml
+    lang/elab.sml
 
 	top/solver.sml
 

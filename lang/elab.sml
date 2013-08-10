@@ -9,7 +9,7 @@ struct
 
   val nextIndex = ref 0
 
-  fun getIndex =
+  fun getIndex () =
     let
       val ret = !nextIndex
     in
@@ -33,12 +33,13 @@ struct
     | elab_expr G (BVP.Ifz (e, e1, e2)) = BV.Ifz(elab_expr G e, elab_expr G e1, elab_expr G e2)
     | elab_expr G (BVP.Fold(vec, init, b1, b2, step)) =
         let
-          val b1' = getIndex()
-          val b2' = getIndex()
+          val b1' = Symbol.look' G b1 handle _ => getIndex()
+          val b2' = Symbol.look' G b2 handle _ => getIndex()
           val G' = Symbol.bind G (b1, b1')
           val G' = Symbol.bind G' (b2, b2')
         in
           BV.Fold(elab_expr G vec, elab_expr G init, b1', b2', elab_expr G' step)
+        end
     | elab_expr G (BVP.Unop (oper, e)) = elab_unop G oper e
     | elab_expr G (BVP.Binop (oper, e1, e2)) = elab_binop G oper e1 e2
 
