@@ -195,8 +195,8 @@ struct
 
             val folds = if not do_fold then [] else
               let
-                val elt_var = Symbol.gensym()
-                val acc_var = Symbol.gensym()
+                val elt_var = ("",2)
+                val acc_var = ("",3)
                 val newvars = elt_var::acc_var::vars
                 val all_smaller_trips : (expr * expr * expr) list =
                   List.concat $ List.map alltriples $
@@ -204,8 +204,9 @@ struct
                                              smaller_exprs_fold vars y,
                                              smaller_exprs_fold newvars z))
                              (partition3 $ size-2) (* NOTE fold has size 2!! *)
-                (* If the inner e is constant, the whole fold is that e. *)
-                fun nonconstant_fold (_, _, e) = not $ constexpr e
+                (* If the inner e doesn't refer to either fold variable, the whole
+                 * fold is equivalent to that e. *)
+                fun nonconstant_fold (_, _, e) = not $ check_freevars_expr vars e
               in
                 List.map (fn (e0,e1,e2) => Fold (e0,e1,elt_var,acc_var,e2)) $
                          List.filter nonconstant_fold all_smaller_trips
@@ -246,7 +247,7 @@ struct
 
   fun generate (spec: Solver.spec) : program list =
     let
-      val top_x = Symbol.gensym ()
+      val top_x = ("",0)
       val ops = #ops spec
       val size = #size spec
       val _ = Assert.assert "give me a positive program size you CLOWN" $ size > 0
@@ -260,7 +261,7 @@ struct
             val _ = Assert.assert "prohibited both folds" $ not $ fold_specified
             (* A Tfold is defined to always be at the top level, always have 0
              * as the accumulator, and always shadow the top 'x' with its own. *)
-            val top_y = Symbol.gensym ()
+            val top_y = ("",1)
             val inner_size = size - (1 (*lambda*) + 2 (*fold*) + 1 (*x*) + 1 (*0*))
           in
             List.map (fn expr => Fold (Id top_x, Zero, top_x, top_y, expr)) $

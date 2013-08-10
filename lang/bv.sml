@@ -148,7 +148,7 @@ struct
         check_freevars_expr (x::y::g) e2
     | check_freevars_expr g (Unop (oper,e)) = check_freevars_expr g e
     | check_freevars_expr g (Binop (oper,e1,e2)) =
-        check_freevars_expr g e1 orelse check_freevars_expr g e2
+        check_freevars_expr g e1 andalso check_freevars_expr g e2
 
   fun check_freevars (Lambda (x,e)) = check_freevars_expr [x] e
 

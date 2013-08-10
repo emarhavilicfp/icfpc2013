@@ -57,7 +57,7 @@ sig
 end
 
 
-structure Symbol :> SYMBOL =
+structure Symbol : SYMBOL =
 struct
   type symbol = string * int
 
