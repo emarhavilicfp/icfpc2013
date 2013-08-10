@@ -62,9 +62,9 @@ struct
       fun allowed (O_Binop x) = SOME x
         | allowed _ = NONE
       (* Some peephole optimizations. For example, we emit one canonical "identity"
-      * binop-expr, "xor 0 e". Hence "or 0 e" and "plus 0 e" are redundant. (NB.
-      * We CANNOT canonicalize "op x (op y z)" to "op (op x y) z" because
-      * 'partition' doesn't emit size-pairs that are lopsided in that direction. *)
+      * binop-expr, "not not e". Hence "or 0 e" and "plus 0 e" and "xor 0 e" are
+      * redundant. (NB. We CANNOT canonicalize "op x (op y z)" to "op (op x y)
+      * z" because 'partition' doesn't emit size-pairs that are lopsided that way. *)
       fun add_op_unless_id x =
         (case (e1,e2) of (Zero,Zero) => NONE | (Zero,_) => NONE | (_,Zero) => NONE
                        | _ => SOME $ Binop(x,e1,e2))
@@ -74,13 +74,7 @@ struct
             (* "Xor thing thing" is a zero, but we already generate a zero of
              * all sizes, i.e., "Shl1 $ Shl1 $ Shl1 .... $ Shl1 Zero". *)
             if e1 = e2 then NONE
-            else
-              (* Also canonicalize "xor e 0" to "xor 0 e". Note! Danger! This is
-               * ONLY safe for "case e2", not "case e1", for the reason outlined in
-               * the above comment -- that is, e2 is always no smaller than e1. *)
-              (case e2 of Zero =>
-                           (Assert.assert "xor canon" (size_expr e1 = 1); NONE)
-                        | _ => SOME $ Binop(Xor,e1,e2))
+            else add_op_unless_id Xor
         | maybe_add_op x = SOME $ Binop(x,e1,e2)
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
@@ -181,8 +175,12 @@ struct
                     List.map (fn (x,y,z) =>
                                 (smaller_exprs x, smaller_exprs y, smaller_exprs z))
                              (partition3 $ size-1)
+                (* "Ifz e Zero Zero" is always zero, but the canonical zero of
+                 * size |e|+3 is Shl1 $ Shl1 $ ... Shl1 Zero. Omit these. *)
+                fun either_branch_nonzero (_,Zero,Zero) = false
+                  | either_branch_nonzero _ = true
               in
-                List.map Ifz all_smaller_trips
+                List.map Ifz $ List.filter either_branch_nonzero all_smaller_trips
               end
 
             val folds = if not do_fold then [] else
