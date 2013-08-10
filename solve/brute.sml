@@ -173,6 +173,7 @@ struct
       val top_x = Symbol.gensym ()
       val ops = #ops spec
       val size = #size spec
+      val _ = Assert.assert "give me a positive program size you CLOWN" $ size > 0
       val table = Array.array (size, [])
       val tfold_overhead = 1 (*outer lambda*) + 2 (*fold*) + 1 (*x*) + 1 (*zero*)
       val tfold_specified = (List.exists (fn x => x = O_Tfold) ops)
@@ -223,6 +224,15 @@ struct
     Assert.assert "generate 6 fold doesn't escape" $
       List.all check_freevars $ List.filter contains_fold $
         generate {size = 6, ops = all_operators},
+    Assert.assert "benchmarks!!1!!1!11" $
+      List.all (fn size =>
+        let
+          val len = List.length $ generate {size = size, ops = all_operators}
+        in
+          Assert.say_yellow ("There are " ^ (Int.toString len) ^
+                             " programs of length " ^ (Int.toString size));
+          true
+        end) [1,2,3,4,5,6,7],
     true
     ]
 end
