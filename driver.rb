@@ -53,6 +53,7 @@ def main
 
   solver_args = "--length=#{example['size']} "
   solver_args += example['operators'].map {|x| "--has-#{x}-op"}.join(" ")
+  solver_args += ' ' + ARGV.join(" ")
   
   def with_pipe(solver_args)
     if @options[:tty]
