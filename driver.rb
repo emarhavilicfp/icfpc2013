@@ -89,7 +89,7 @@ def main
             solver_io << "RIGHT\n"
             exit 0
           elsif result['status'] == 'mismatch'
-            alert_the_media "FAILURE on problem #{example['id']} (#{mode})"
+            notify_the_media "*** FAILURE on problem #{example['id']} (#{mode}) *** (may be benign, but heads up ...)"
             transcribe "SOLVER_OUT: WRONG"
             solver_io << "WRONG\n"
             transcribe result['values'].map {|x| "SOLVER_OUT: #{x}"}
