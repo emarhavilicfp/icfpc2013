@@ -11,6 +11,7 @@ AUTHKEY = "0132X9AqfwFADPNaFAspP3eFjUdCx0fVpxWS6pHd"
 def main
   @options = {}
   @options[:transcript] = true
+  @options[:bin] = "bin/solve"
 
   OptionParser.new do |opts|
     opts.banner = "Usage: driver.rb [--tty] [--quiet] {--real ID | [-n N] [--fold fold|tfold|nofold]} [-- <solver args>]"
@@ -29,6 +30,10 @@ def main
 
     opts.on("--tty", "Talk to the tty instead of the solver") do |t|
       @options[:tty] = t
+    end
+    
+    opts.on("--mlton", "Aplicar de MLton.") do |t|
+      @options[:bin] = "bin/solve-mlton"
     end
 
     opts.on("-q", "--quiet", "Don't dump all communications. (You shouldn't use this.)") do |t|
@@ -55,7 +60,8 @@ def main
     mode = "training"
   end
 
-  solver_args = "--length=#{example['size']} "
+  solver_args = @options[:bin]
+  solver_args += " --length=#{example['size']} "
   solver_args += example['operators'].map {|x| "--has-#{x}-op"}.join(" ")
   solver_args += ' ' + ARGV.join(" ")
   
@@ -64,11 +70,11 @@ def main
       puts "Args to solver would have been: #{solver_args}"
       yield File.open("/dev/tty", "r+")
     else
-      yield IO.popen("sh -c 'bin/solve #{solver_args}'", "r+")
+      yield IO.popen("sh -c '#{solver_args}'", "r+")
     end
   end
 
-  transcribe "INVOKE_SOLVER: sh -c 'bin/solve #{solver_args}'"
+  transcribe "INVOKE_SOLVER: sh -c '#{solver_args}'"
   with_pipe solver_args do |solver_io|
     begin
       line = nil
