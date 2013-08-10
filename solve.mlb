@@ -6,16 +6,31 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 	util/haskell.sml
 
+	util/assert.sml
 	util/mark.sml
 	util/flag.sml
 	util/symbol.sml
 	util/errormsg.sml
         util/safe-io.sml
         util/word32.sml
+	util/mersenne-twister-sig.sml
+	util/mersenne-twister.sml
+
+	lang/parsestate.sml
+	lang/bv.sml
+	lang/bv.grm.sig
+	lang/bv.lex.sml
+	lang/bv.grm.sml
 
 	top/flags.sml
+	top/solver.sml
+	top/io.sml
 
-	lang/bv.sml
+	lang/parse.sml
+	lang/bv-test.sml
+    lang/evaluator.sml
+
+    solve/brute.sml
+    solve/brute_solve.sml
 
 	top/top.sml
-	top/top_mlton.sml

@@ -10,8 +10,9 @@ check: FORCE
 	./bin/check
 
 solve-mlton: FORCE
-	@echo "Oh no you didn't!"; exit 1
-	mlton -profile time -profile-branch true -output bin/solve-mlton sources.mlb
+	mllex lang/bv.lex
+	mlyacc lang/bv.grm
+	mlton -profile time -profile-branch true -output bin/solve-mlton solve.mlb
 
 reallyclean: clean
 	${RM} parse/*.lex.* parse/*.grm.*
