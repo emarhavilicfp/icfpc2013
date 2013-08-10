@@ -11,10 +11,10 @@ AUTHKEY = "0132X9AqfwFADPNaFAspP3eFjUdCx0fVpxWS6pHd"
 def main
   @options = {}
   OptionParser.new do |opts|
-    opts.banner = "Usage: driver.rb [--tty] [--transcript] --train [-n N] [--fold fold|tfold|nofold] [-- <solver args>]"
+    opts.banner = "Usage: driver.rb [--tty] [--transcript] {--real ID | [-n N] [--fold fold|tfold|nofold]} [-- <solver args>]"
 
-    opts.on("-t", "--[no-]train", "Training mode") do |t|
-      @options[:train] = t
+    opts.on("-r", "--real ID", "Real mode, with problem ID to solve (default is training mode)") do |r|
+      @options[:pid] = r
     end
 
     opts.on("-n", "--num N", "Number of operators to request in training example") do |n|
@@ -33,21 +33,23 @@ def main
       @options[:transcript] = t
     end
   end.parse!
-  
-  if not @options[:train]
-    raise "--train is the only implemented mode"
-  end
 
-  trainopts = {}
-  if @options[:nops]
-    trainopts[:size] = @options[:nops].to_i
+  example = nil
+  if @options[:pid]
+    myproblems = JSON.parse(File.open('myproblems').readlines.join(''))
+    example = myproblems.select{|x| x['id'] == @options[:pid]}[0]
+  else
+    trainopts = {}
+    if @options[:nops]
+      trainopts[:size] = @options[:nops].to_i
+    end
+    if @options[:fold] == 'nofold'
+      trainopts[:operators] = []
+    elsif @options[:fold]
+      trainopts[:operators] = [@options[:fold]]
+    end
+    example = do_train trainopts
   end
-  if @options[:fold] == 'nofold'
-    trainopts[:operators] = []
-  elsif @options[:fold]
-    trainopts[:operators] = [@options[:fold]]
-  end
-  example = do_train trainopts
 
   solver_args = "--length=#{example['size']} "
   solver_args += example['operators'].map {|x| "--has-#{x}-op"}.join(" ")
