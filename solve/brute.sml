@@ -200,8 +200,8 @@ struct
 
             val folds = if not do_fold then [] else
               let
-                val elt_var = ("y",2)
-                val acc_var = ("z",3)
+                val elt_var = 1
+                val acc_var = 2
                 val newvars = elt_var::acc_var::vars
                 val all_smaller_trips : (expr * expr * expr) list =
                   List.concat $ List.map alltriples $
@@ -259,7 +259,7 @@ struct
 
   fun generate (spec: Solver.spec) : program list =
     let
-      val top_x = ("x",0)
+      val top_x = 0
       val ops = #ops spec
       val size = #size spec
       val _ = Assert.assert "give me a positive program size you CLOWN" $ size > 0
@@ -273,7 +273,7 @@ struct
             val _ = Assert.assert "prohibited both folds" $ not $ fold_specified
             (* A Tfold is defined to always be at the top level, always have 0
              * as the accumulator, and always shadow the top 'x' with its own. *)
-            val top_y = ("y",1)
+            val top_y = 1
             val inner_size = size - (1 (*lambda*) + 2 (*fold*) + 1 (*x*) + 1 (*0*))
           in
             List.map (fn expr => Fold (Id top_x, Zero, top_x, top_y, expr)) $
