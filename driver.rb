@@ -40,7 +40,7 @@ def main
 
   trainopts = {}
   if @options[:nops]
-    trainopts[:size] = @options[:nops]
+    trainopts[:size] = @options[:nops].to_i
   end
   if @options[:fold] == 'nofold'
     trainopts[:operators] = []
@@ -77,8 +77,8 @@ def main
           elsif result['status'] == 'mismatch'
             transcribe "SOLVER_OUT: WRONG"
             solver_io << "WRONG\n"
-            transcribe "SOLVER_OUT: #{result['values'].join(" ")}"
-            solver_io << result['values'].join(" ") + "\n"
+            transcribe result['values'].map {|x| "SOLVER_OUT: #{x}"}
+            solver_io << result['values'].join("\n") + "\n"
           elsif result['status'] == 'error'
             raise "API ERROR: #{result['message']}"
           else
@@ -89,11 +89,13 @@ def main
           (1 .. arg.to_i).each do |_|
             args << solver_io.readline.strip
           end
-          transcribe args.map {|x| "SOLVER_IN: #{x}"}.join("\n")
+          transcribe args.map {|x| "SOLVER_IN: #{x}"}
           result = do_eval example['id'], args
           if result['status'] == 'ok'
-            transcribe "SOLVER_OUT: #{result['outputs'].join(" ")}"
-            solver_io << result['outputs'].join(" ") + "\n"
+            transcribe "SOLVER_OUT: OKAY"
+            solver_io << "OKAY\n"
+            transcribe result['outputs'].map {|x| "SOLVER_OUT: #{x}"}
+            solver_io << result['outputs'].join("\n") + "\n"
           elsif result['status'] == 'error'
             raise "API ERROR: #{result['message']} (#{pphash result})"
           else 
@@ -113,7 +115,13 @@ end
 
 def transcribe(x)
   if @options[:transcript]
-    puts x
+    if x.kind_of?(Array) 
+      x.each do |l|
+        $stderr.puts l
+      end
+    else
+      $stderr.puts x
+    end
   end
 end
 
