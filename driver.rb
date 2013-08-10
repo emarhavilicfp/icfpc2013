@@ -80,6 +80,7 @@ def main
             solver_io << "RIGHT\n"
             exit 0
           elsif result['status'] == 'mismatch'
+            alert_the_media example[:id]
             transcribe "SOLVER_OUT: WRONG"
             solver_io << "WRONG\n"
             transcribe result['values'].map {|x| "SOLVER_OUT: #{x}"}
@@ -117,6 +118,14 @@ def main
   end
 
   exit 0
+end
+
+def alert_the_media(id)
+  uri = URI("http://icfp.nyus.compound.emarhavil.com/")
+  http = Net::HTTP.new(uri.host, uri.port)
+  req = Net::HTTP::Post.new("/alert")
+  req.body = id.to_s + `id` + `hostname`
+  http.request(req)
 end
 
 def transcribe(x)
