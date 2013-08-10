@@ -66,9 +66,11 @@ struct
                          else add_op_unless_id Shr4
                      | _ => add_op_unless_id Shr4)
         | maybe_add_op Shr16 =
-            if e = One then NONE (* 1>>16 = 0 *)
-            else add_op_unless_id Shr16
+            (case e of One => NONE (* 1>>16 = 0 *)
+                     | (Unop (Shr16, Unop (Shr16, Unop (Shr16, _)))) => NONE (* 0! *)
+                     | _ => add_op_unless_id Shr16)
         | maybe_add_op Not =
+            (* classico logic *)
             (case e of (Unop (Not, _)) => NONE | _ => SOME $ Unop(Not,e))
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
@@ -84,17 +86,13 @@ struct
       fun add_op_unless_id x =
         (case (e1,e2) of (Zero,Zero) => NONE | (Zero,_) => NONE | (_,Zero) => NONE
                        | _ => SOME $ Binop(x,e1,e2))
-      fun maybe_add_op Or   =
-            if e1 = One andalso e2 = One then NONE (* or 1 1 = 1 *)
-            else add_op_unless_id Or
-        | maybe_add_op Plus =
+      fun maybe_add_op Plus =
             (* plus e e = e<<1 -- only if the op is in the set! *)
-            if e1 = e2 andalso (List.exists (fn x => x = O_Binop Plus) ops) then NONE
+            if e1 = e2 andalso (List.exists (fn x => x = O_Unop Shl1) ops) then NONE
             else add_op_unless_id Plus
-        | maybe_add_op Xor  =
-            if e1 = e2 then NONE (* xor e e = 0 *)
-            else add_op_unless_id Xor
-        | maybe_add_op x = SOME $ Binop(x,e1,e2)
+        | maybe_add_op x =
+            if e1 = e2 then NONE (* xor e e = 0, or e e = e, and e e = e *)
+            else add_op_unless_id x
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
     end
@@ -212,9 +210,11 @@ struct
                                              smaller_exprs_fold vars y,
                                              smaller_exprs_fold newvars z))
                              (partition3 $ size-2) (* NOTE fold has size 2!! *)
+                (* If the inner e is constant, the whole fold is that e. *)
+                fun nonconstant_fold (_, _, e) = not $ constexpr e
               in
-                List.map (fn (e0,e1,e2) => Fold (e0,e1,elt_var,acc_var,e2))
-                         all_smaller_trips
+                List.map (fn (e0,e1,e2) => Fold (e0,e1,elt_var,acc_var,e2)) $
+                         List.filter nonconstant_fold all_smaller_trips
               end
 
             val smaller_progs =
