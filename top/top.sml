@@ -72,7 +72,13 @@ struct
                   help=""},
                  {short = "l", long = ["length"],
                   desc=G.ReqArg (fn s => len := (valOf $ Int.fromString s), "length"),
-                  help=""}
+                  help=""},
+                 {short = "q", long = ["questions"],
+                  desc=G.ReqArg (fn s => Flags.nquestions := (valOf $ Int.fromString s), "questions"),
+                  help="how many questions to ask the server in one go"},
+                 {short = "s", long = ["seed"],
+                  desc=G.ReqArg (fn s => Flags.seed := (valOf $ Word32.fromString s), "seed"),
+                  help="RNG seed"}
                 ] 
                 @
                 map

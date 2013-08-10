@@ -5,14 +5,14 @@ struct
   fun log s = let open TextIO in output (stdErr, s); flushOut stdErr end
   
   structure MT = MersenneTwister
-  val mt = MT.init32 0w0
+  val mt = ref (MT.init32 0w0)
   
   val w32w64 = Word64.fromLargeInt o Word32.toLargeInt
   
   fun random () =
     Word64.orb (
-      Word64.<< (w32w64 $ MT.rand32 mt, 0w32),
-      w32w64 $ MT.rand32 mt
+      Word64.<< (w32w64 $ MT.rand32 (!mt), 0w32),
+      w32w64 $ MT.rand32 (!mt)
     )
   
   fun disambiguate choices =
@@ -37,7 +37,7 @@ struct
   exception Narrowed
   fun narrow choices =
     let
-      val vecs = ndisambig choices 16
+      val vecs = ndisambig choices (!Flags.nquestions)
       val _ = case vecs of nil => raise Narrowed | _ => ()
       val results = ServerIO.eval vecs
       val pairs = ListPair.zip (vecs, results)
@@ -53,10 +53,13 @@ struct
 
   fun solve a =
     let
+      val _ = mt := (MT.init32 (!Flags.seed))
       fun rep [] = raise Fail "Uhm..."
         | rep (p :: nil) = ServerIO.guess p
         | rep ps = rep (narrow ps)
                      handle Narrowed => ServerIO.guess (List.nth (ps, 1))
+      val res = rep (Brute.generate a)
+      val _ = Flags.seed := MT.rand32 (!mt)
     in
       case rep (Brute.generate a)
       of ServerIO.RIGHT => ()

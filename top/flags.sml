@@ -7,6 +7,9 @@ sig
   val assem : Flag.flag
   val color : Flag.flag
   val safe : Flag.flag
+
+  val nquestions : int ref
+  val seed : Word32.word ref
   
   val reset : unit -> unit	(* Anus... *)
 end
@@ -20,6 +23,8 @@ struct
   val assem = Flag.flag "assem"
   val color = Flag.flag "color"
   val safe = Flag.flag "safe"
+  val nquestions = ref 16
+  val seed : Word32.word ref = ref 0w0
   
   fun reset () =
     (List.app Flag.unset [verbose, ast,
