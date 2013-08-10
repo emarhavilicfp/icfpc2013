@@ -42,6 +42,8 @@ struct
 
   datatype narrowed = Separated of BV.program list 
                     | Inseparable of BV.program list
+  datatype narrowinput = KNOWN of Word64.word * Word64.word
+                       | UNKNOWN of Word64.word list
 
   (* Filter down a bunch of functions into those that are consistent
      with the target function on `inputs`.
@@ -50,12 +52,15 @@ struct
      signify whether it was only vacuously consistent with the target
      function (because `inputs` is `nil`).
    *)
-  fun narrow choices inputs =
+  fun narrow choices input =
     let
-      val results = ServerIO.eval inputs
-      val pairs = ListPair.zip (inputs, results)
+      val pairs = 
+        case input
+        of KNOWN ks => [ks]
+         | UNKNOWN [] => []
+         | UNKNOWN inps => ListPair.zip (inps, ServerIO.eval inps)
       val possible =
-          case inputs
+          case pairs
            of nil => Inseparable choices
             | _ =>
               Separated $
@@ -84,21 +89,20 @@ struct
           let
             val inputs = ndisambig ps (!Flags.nquestions)
           in
-            rep (narrow ps inputs)
+            rep (narrow ps (UNKNOWN inputs))
           end
 
         | rep (Inseparable (p :: nil)) = ServerIO.guess p
         | rep (Inseparable ps) =
           let
             val result = ServerIO.guess (List.hd ps)
-            val inputs = ndisambig ps (!Flags.nquestions - 1)
           in
             case result
             of ServerIO.RIGHT => result
              | ServerIO.WRONG { input = inp,
                                 exp = exp,
                                 ours = ours } =>
-               rep (narrow ps (inp :: inputs))
+               rep (narrow ps $ KNOWN (inp, exp))
           end
 
       val res = rep (Separated (Brute.generate a))
