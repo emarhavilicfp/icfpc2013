@@ -96,9 +96,7 @@ struct
 
         (* Generate ternary expressions. *)
         val allowed_ifz   = List.exists (fn x => x = O_Ifz) ops
-        val allowed_tfold = List.exists (fn x => x = O_Tfold) ops
-        val allowed_fold  = List.exists (fn x => x = O_Fold) ops
-
+        
         val ifzs = if not allowed_ifz then [] else
           let
             val all_smaller_trips : (expr * expr * expr) list =
@@ -118,10 +116,17 @@ struct
 
   fun generate (spec: Solver.spec) : program list =
     let
-      val top_x = Symbol.gensym()
+      val top_x = Symbol.gensym ()
+      val top_y = Symbol.gensym ()
       val inner_size = #size spec - 1
       val expr_table = ref $ List.tabulate (inner_size, fn _ => ref [])
-      val exprs = generate_expr expr_table true [top_x] (#ops spec) inner_size
+      val is_tfold = List.exists (fn x => x = O_Tfold) (#ops spec)
+      val is_fold = List.exists (fn x => x = O_Fold) (#ops spec)
+      val exprs =
+        if is_tfold
+        then List.map (fn expr => Fold (Id top_x, Zero, top_x, top_y, expr))
+             $ generate_expr expr_table false [top_x, top_y] (#ops spec (* XXX: actually, smaller *)) inner_size
+        else generate_expr expr_table is_fold [top_x] (#ops spec) inner_size
     in
       List.map (fn expr => Lambda (top_x, expr)) exprs
     end
