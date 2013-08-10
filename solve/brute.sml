@@ -71,9 +71,12 @@ struct
       fun maybe_add_op Or   = add_op_unless_id Or
         | maybe_add_op Plus = add_op_unless_id Plus
         | maybe_add_op Xor  =
-            (* Note! Danger! This is ONLY safe for "case e2", not "case e1", for
-             * the reason outlined in the above comment. *)
-            (case e2 of Zero => NONE | _ => SOME $ Binop(Xor,e1,e2))
+            (* Also canonicalize "xor e 0" to "xor 0 e". Note! Danger! This is
+             * ONLY safe for "case e2", not "case e1", for the reason outlined in
+             * the above comment -- that is, e2 is always no smaller than e1. *)
+            (case e2 of Zero =>
+                         (Assert.assert "xor canon" (size_expr e1 = 1); NONE)
+                      | _ => SOME $ Binop(Xor,e1,e2))
         | maybe_add_op x = SOME $ Binop(x,e1,e2)
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops

@@ -37,6 +37,9 @@ sig
 
   val check_freevars_expr : Symbol.symbol list -> expr-> bool
   val check_freevars      : program -> bool
+
+  val size_expr : expr -> int
+  val size      : program -> int
 end
 
 structure BV : BV =
