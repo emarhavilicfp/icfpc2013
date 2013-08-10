@@ -40,6 +40,7 @@ def main
   if @options[:pid]
     myproblems = JSON.parse(File.open('myproblems').readlines.join(''))
     example = myproblems.select{|x| x['id'] == @options[:pid]}[0]
+    mode = "reality"
   else
     trainopts = {}
     if @options[:nops]
@@ -51,6 +52,7 @@ def main
       trainopts[:operators] = [@options[:fold]]
     end
     example = do_train trainopts
+    mode = "training"
   end
 
   solver_args = "--length=#{example['size']} "
@@ -76,11 +78,12 @@ def main
         if cmd == 'GUESS'
           result = do_guess example['id'], arg.strip
           if result['status'] == 'win'
+            notify_the_media "Successful solution on problem #{example['id']} (#{mode})"
             transcribe "SOLVER_OUT: RIGHT"
             solver_io << "RIGHT\n"
             exit 0
           elsif result['status'] == 'mismatch'
-            alert_the_media "FAILURE on problem #{example['id']}"
+            alert_the_media "FAILURE on problem #{example['id']} (#{mode})"
             transcribe "SOLVER_OUT: WRONG"
             solver_io << "WRONG\n"
             transcribe result['values'].map {|x| "SOLVER_OUT: #{x}"}
@@ -126,6 +129,14 @@ def alert_the_media(message)
   uri = URI("http://icfp.nyus.compound.emarhavil.com/")
   http = Net::HTTP.new(uri.host, uri.port)
   req = Net::HTTP::Post.new("/alert")
+  req.body = message + "\n" + `id -un`.strip + '@' + `hostname`.strip
+  http.request(req)
+end
+
+def notify_the_media(message)
+  uri = URI("http://icfp.nyus.compound.emarhavil.com/")
+  http = Net::HTTP.new(uri.host, uri.port)
+  req = Net::HTTP::Post.new("/notify")
   req.body = message + "\n" + `id -un`.strip + '@' + `hostname`.strip
   http.request(req)
 end
