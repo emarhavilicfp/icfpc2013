@@ -14,10 +14,13 @@ Group is
 	util/errormsg.sml
         util/safe-io.sml
         util/word32.sml
+	util/mersenne-twister-sig.sml
+	util/mersenne-twister.sml
 
 	top/flags.sml
 
 	solve/brute.sml
+	solve/brute_solve.sml
 
 (*	type/type.sml
 	parse/ast.sml

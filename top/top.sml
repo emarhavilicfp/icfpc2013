@@ -23,7 +23,7 @@ struct
 
   exception EXIT
 
-  val solvers = [Solver.TotalNobe]
+  val solvers = [BruteSolve.solver, Solver.TotalNobe]
   val solver = case solvers
                of s :: _ => ref s
                 | _ => raise Fail "no solvers"
