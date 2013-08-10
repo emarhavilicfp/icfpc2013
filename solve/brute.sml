@@ -55,13 +55,51 @@ struct
     let
       fun allowed (O_Binop x) = SOME x
         | allowed _ = NONE
+      (* Some peephole optimizations. For example, we emit one canonical "identity"
+      * binop-expr, "xor 0 e". Hence "or 0 e" and "plus 0 e" are redundant. (NB.
+      * We CANNOT canonicalize "op x (op y z)" to "op (op x y) z" because
+      * 'partition' doesn't emit size-pairs that are lopsided in that direction. *)
+      fun maybe_add_op Or =
+            (case e1 of Zero => NONE | _ => SOME $ Binop(Or,e1,e2))
+        | maybe_add_op Plus =
+            (case e1 of Zero => NONE | _ => SOME $ Binop(Plus,e1,e2))
+        | maybe_add_op x = SOME $ Binop(x,e1,e2)
     in
-      List.map (fn x => Binop (x,e1,e2)) $ List.mapPartial allowed ops
+      List.mapPartial maybe_add_op $ List.mapPartial allowed ops
     end
+
+  fun optmz_associative_binops x = x
+  (* This is O(n^2) in the length of list of expressions. Too expensive.
+  fun optmz_associative_binops [] = []
+      (* canonicalize: op ((op x2 x3) x1) => op (x1 (op x2 x3)) *)
+    | optmz_associative_binops ((Binop (op1, e0 as Binop (op2,e2,e3), e1))::rest) =
+        optmz_associative_binops ((Binop (op1, e1, e0))::rest)
+    | optmz_associative_binops ((e as (Binop (op1,e1, Binop (op2,e2,e3))))::rest) =
+        if op1 <> op2 then e::(optmz_associative_binops rest)
+        else
+          let
+            fun not_same (Binop (op1, e0 as Binop (op2,e2,e3), e1)) =
+                  not_same (Binop (op1, e1, e0))
+              | not_same (Binop (op1',x, Binop (op2',y,z))) =
+                  op1' <> op1 orelse op2' <> op1 orelse
+                  (List.all (fn (x,y,z) => Binop (op1, x, Binop (op2, y, z)) <> e)
+                     [(z,x,y), (y,z,x), (z,y,x), (y,x,z), (x,z,y)])
+              | not_same _ = true
+          in
+            e::(optmz_associative_binops $ List.filter not_same rest)
+          end
+    | optmz_associative_binops ((e as Binop _)::rest) =
+        e::(optmz_associative_binops rest)
+    | optmz_associative_binops _ = raise Fail "non binop in binop list"
+   *)
 
   (* danger, combinatorics *)
   fun allpairs (xs: 'a list, ys: 'a list) : ('a * 'a) list =
     List.concat $ List.map (fn x => List.map (fn y => (x,y)) ys) xs
+  fun allpairs_no_refl (xs: expr list, ys: expr list) : (expr * expr) list =
+    List.concat $
+      List.map (fn x => List.mapPartial
+                          (fn y => if x = y then NONE else SOME(x,y)) ys) xs
 
   fun alltriples (xs: 'a list, ys: 'a list, zs: 'a list) : ('a * 'a * 'a) list =
     List.concat $ List.concat $
@@ -100,12 +138,18 @@ struct
             (* TODO: Long-term: Can prune out duplicate Binop(e1,e2), Binop(e2,e1)
              * in case where the partition is the same size on both sides *)
             val all_smaller_pairs : (expr * expr) list =
-              List.concat $ List.map allpairs $
-                List.map (fn (x,y) => (smaller_exprs x, smaller_exprs y))
+              List.concat $
+                List.map (fn (x,y) =>
+                            if x=y then
+                              (* Optimize commutative binops here. *)
+                              allpairs_no_refl (smaller_exprs x, smaller_exprs y)
+                            else
+                              allpairs (smaller_exprs x, smaller_exprs y))
                          (partition2 $ size-1)
-            val binaries =
+            (* Optimize associative binops here. *)
+            val binaries = optmz_associative_binops $
               (* note: partition2 emits [] if size < 3 *)
-              List.concat $ List.map (add_binop ops) $ all_smaller_pairs
+              List.concat $ List.map (add_binop ops) all_smaller_pairs
 
             (* Generate ternary expressions. *)
             (* TODO: As far-above todo in add_unops. Lift. *)
@@ -220,7 +264,7 @@ struct
     Assert.assert "generate 3 tfold"
       (List.length (generate {size = 3, ops = all_operators_tfold}) = 15),
     Assert.assert "generate 5"
-      (List.length (generate {size = 5, ops = all_operators}) < 763),
+      (List.length (generate {size = 5, ops = all_operators}) < 653),
     Assert.assert "generate 6 fold doesn't escape" $
       List.all check_freevars $ List.filter contains_fold $
         generate {size = 6, ops = all_operators},
