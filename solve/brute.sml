@@ -50,10 +50,14 @@ struct
         | allowed _ = NONE
       (* Same as maybe_add_op in add_binop below. "Shl1 Zero" is the canonical. *)
       fun add_op_unless_id x = (case e of Zero => NONE | _ => SOME $ Unop(x,e))
-      fun maybe_add_op Shr1  = add_op_unless_id Shr1
+      fun maybe_add_op Shl1  = add_op_unless_id Shl1
+        | maybe_add_op Shr1  =
+            if e = One then NONE (* 1>>1 = 0 *)
+            else add_op_unless_id Shr1
         | maybe_add_op Shr4  = add_op_unless_id Shr4
         | maybe_add_op Shr16 = add_op_unless_id Shr16
-        | maybe_add_op x = SOME $ Unop(x,e)
+        | maybe_add_op Not =
+            (case e of (Unop (Not, _)) => NONE | _ => SOME $ Unop(Not,e))
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
     end
@@ -68,12 +72,12 @@ struct
       fun add_op_unless_id x =
         (case (e1,e2) of (Zero,Zero) => NONE | (Zero,_) => NONE | (_,Zero) => NONE
                        | _ => SOME $ Binop(x,e1,e2))
-      fun maybe_add_op Or   = add_op_unless_id Or
+      fun maybe_add_op Or   =
+            if e1 = One andalso e2 = One then NONE (* or 1 1 = 1 *)
+            else add_op_unless_id Or
         | maybe_add_op Plus = add_op_unless_id Plus
         | maybe_add_op Xor  =
-            (* "Xor thing thing" is a zero, but we already generate a zero of
-             * all sizes, i.e., "Shl1 $ Shl1 $ Shl1 .... $ Shl1 Zero". *)
-            if e1 = e2 then NONE
+            if e1 = e2 then NONE (* xor e e = 0 *)
             else add_op_unless_id Xor
         | maybe_add_op x = SOME $ Binop(x,e1,e2)
     in
@@ -175,12 +179,11 @@ struct
                     List.map (fn (x,y,z) =>
                                 (smaller_exprs x, smaller_exprs y, smaller_exprs z))
                              (partition3 $ size-1)
-                (* "Ifz e Zero Zero" is always zero, but the canonical zero of
-                 * size |e|+3 is Shl1 $ Shl1 $ ... Shl1 Zero. Omit these. *)
-                fun either_branch_nonzero (_,Zero,Zero) = false
-                  | either_branch_nonzero _ = true
+                fun nonconstant_ifz (Zero,_,_) = false (* TODO *)
+                  | nonconstant_ifz (One,_,_) = false
+                  | nonconstant_ifz (_,e1 : expr, e2 : expr) = e1 <> e2
               in
-                List.map Ifz $ List.filter either_branch_nonzero all_smaller_trips
+                List.map Ifz $ List.filter nonconstant_ifz all_smaller_trips
               end
 
             val folds = if not do_fold then [] else
@@ -199,7 +202,10 @@ struct
                          all_smaller_trips
               end
 
-            val result = List.concat [folds, ifzs, binaries, unaries]
+            val smaller_progs =
+              List.concat $ List.tabulate (size, fn n => smaller_exprs n)
+
+            val result = List.concat [folds, ifzs, binaries, unaries, smaller_progs]
           in
             Array.update (table, size, (vars, do_fold, result)::slot); result
           end
@@ -275,13 +281,13 @@ struct
     Assert.assert "partition3 4" (List.length (partition3 4) = 3),
     Assert.assert "generate 2" (List.length (generate {size = 2, ops = []}) = 3),
     Assert.assert "generate 3"
-      (List.length (generate {size = 3, ops = all_operators}) = 12),
+      (List.length (generate {size = 3, ops = all_operators}) <= 13),
     Assert.assert "generate 3 nofold"
-      (List.length (generate {size = 3, ops = all_operators_nofold}) = 12),
+      (List.length (generate {size = 3, ops = all_operators_nofold}) <= 13),
     Assert.assert "generate 3 tfold"
-      (List.length (generate {size = 3, ops = all_operators_tfold}) = 12),
+      (List.length (generate {size = 3, ops = all_operators_tfold}) <= 13),
     Assert.assert "generate 5"
-      (List.length (generate {size = 5, ops = all_operators}) < 653),
+      (List.length (generate {size = 5, ops = all_operators}) < 654),
     Assert.assert "generate 6 fold doesn't escape" $
       List.all check_freevars $ List.filter contains_fold $
         generate {size = 6, ops = all_operators},
