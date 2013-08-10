@@ -3,6 +3,7 @@ sig
   type word
 
   val eval : BVP.program -> word -> word
+  val eval_expr : word Symbol.table -> BVP.expr -> word
 end
 
 structure Eval : EVAL =

@@ -42,6 +42,10 @@ struct
       List.concat (p' (n-2))
     end
 
+  fun eq e1 e2 = e1 = e2 orelse
+        (constexpr e1 andalso constexpr e2 andalso
+         Eval.eval_expr Symbol.empty e1 = Eval.eval_expr Symbol.empty e2)
+
   (* TODO: Later. Possible optimization. Separate out the types of ops into
    * separate lists at the top level, rather than at every nobe. *)
   fun add_unop ops e =
@@ -88,10 +92,10 @@ struct
                        | _ => SOME $ Binop(x,e1,e2))
       fun maybe_add_op Plus =
             (* plus e e = e<<1 -- only if the op is in the set! *)
-            if e1 = e2 andalso (List.exists (fn x => x = O_Unop Shl1) ops) then NONE
+            if eq e1 e2 andalso (List.exists (fn x => x = O_Unop Shl1) ops) then NONE
             else add_op_unless_id Plus
         | maybe_add_op x =
-            if e1 = e2 then NONE (* xor e e = 0, or e e = e, and e e = e *)
+            if eq e1 e2 then NONE (* xor e e = 0, or e e = e, and e e = e *)
             else add_op_unless_id x
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
@@ -188,15 +192,16 @@ struct
                                 (smaller_exprs x, smaller_exprs y, smaller_exprs z))
                              (partition3 $ size-1)
                 fun nonconstant_ifz (e0 : expr, e1 : expr, e2 : expr) =
-                      (not $ constexpr e0) andalso e1 <> e2
+                      (not $ constexpr e0) andalso (not $ eq e1 e2) andalso
+                      (not (e1 = Zero andalso eq e0 e2)) (* if e=0 then 0 else e *)
               in
                 List.map Ifz $ List.filter nonconstant_ifz all_smaller_trips
               end
 
             val folds = if not do_fold then [] else
               let
-                val elt_var = ("",2)
-                val acc_var = ("",3)
+                val elt_var = ("y",2)
+                val acc_var = ("z",3)
                 val newvars = elt_var::acc_var::vars
                 val all_smaller_trips : (expr * expr * expr) list =
                   List.concat $ List.map alltriples $
@@ -206,7 +211,14 @@ struct
                              (partition3 $ size-2) (* NOTE fold has size 2!! *)
                 (* If the inner e doesn't refer to either fold variable, the whole
                  * fold is equivalent to that e. *)
-                fun nonconstant_fold (_, _, e) = not $ check_freevars_expr vars e
+                fun nonconstant_fold (_, _, e) =
+                  (not $ check_freevars_expr vars e)
+                    (* identity accumulation *)
+                    andalso e <> Id acc_var andalso e <> Unop (Not, Id acc_var)
+                    (* will always accumulate to zero *)
+                    andalso e <> Unop (Shr16, Id acc_var)
+                    (* shr1 and shr4 are also redundant with two greater shrs,
+                     * but require the other op to do without a fold *)
               in
                 List.map (fn (e0,e1,e2) => Fold (e0,e1,elt_var,acc_var,e2)) $
                          List.filter nonconstant_fold all_smaller_trips
@@ -247,7 +259,7 @@ struct
 
   fun generate (spec: Solver.spec) : program list =
     let
-      val top_x = ("",0)
+      val top_x = ("x",0)
       val ops = #ops spec
       val size = #size spec
       val _ = Assert.assert "give me a positive program size you CLOWN" $ size > 0
@@ -261,7 +273,7 @@ struct
             val _ = Assert.assert "prohibited both folds" $ not $ fold_specified
             (* A Tfold is defined to always be at the top level, always have 0
              * as the accumulator, and always shadow the top 'x' with its own. *)
-            val top_y = ("",1)
+            val top_y = ("y",1)
             val inner_size = size - (1 (*lambda*) + 2 (*fold*) + 1 (*x*) + 1 (*0*))
           in
             List.map (fn expr => Fold (Id top_x, Zero, top_x, top_y, expr)) $
@@ -309,7 +321,7 @@ struct
           Assert.say_yellow ("There are " ^ (Int.toString len) ^
                              " programs of length " ^ (Int.toString size));
           true
-        end) [1,2,3,4,5,6,7],
+        end) [1,2,3,4,5,6,7,8],
     true
     ]
 end
