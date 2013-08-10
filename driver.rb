@@ -33,7 +33,7 @@ def main
       @options[:transcript] = t
     end
   end.parse!
- 
+  
   if not @options[:train]
     raise "--train is the only implemented mode"
   end
@@ -51,13 +51,13 @@ def main
 
   solver_args = "--length=#{example['size']} "
   solver_args += example['operators'].map {|x| "--has-#{x}-op"}.join(" ")
-
+  
   def with_pipe(solver_args)
     if @options[:tty]
       puts "Args to solver would have been: #{solver_args}"
       yield File.open("/dev/tty", "r+")
     else
-      yield IO.popen "bin/solve #{solver_args}"
+      yield IO.popen("sh -c 'bin/solve #{solver_args}'", "r+")
     end
   end
 

@@ -98,7 +98,7 @@ struct
       let
         val x = !counter
       in
-        (counter := x+1; ("__gs",x))
+        (counter := x+1; ("gensym"^(Int.toString x),x))
       end
   end
 
