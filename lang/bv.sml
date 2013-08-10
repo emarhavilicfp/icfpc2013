@@ -30,6 +30,7 @@ sig
 
   val all_operators : operator list
 
+  val contains_fold : expr -> bool
 end
 
 structure BV : BV =
@@ -58,11 +59,6 @@ struct
                     | O_Fold
 
   datatype program = Lambda of id * expr
-
-  val all_operators =
-    List.map (fn x => O_Unop x) [Not, Shl1, Shr1, Shr4, Shr16]@
-    List.map (fn x => O_Binop x) [And, Or, Xor, Plus]@
-    [O_Ifz, O_Tfold, O_Fold]
 
   (* Programs -> Text *)
 
@@ -106,5 +102,21 @@ struct
     | size_expr (Binop (oper,e1,e2)) = 1 + size_expr e1 + size_expr e2
 
   fun size (Lambda (x,e)) = 1 + size_expr e
+
+  (* miscellaneous *)
+
+  val all_operators =
+    List.map (fn x => O_Unop x) [Not, Shl1, Shr1, Shr4, Shr16]@
+    List.map (fn x => O_Binop x) [And, Or, Xor, Plus]@
+    [O_Ifz, O_Tfold, O_Fold]
+
+  fun contains_fold Zero = false
+    | contains_fold One = false
+    | contains_fold (Id _) = false
+    | contains_fold (Ifz (e0,e1,e2)) =
+          contains_fold e0 orelse contains_fold e1 orelse contains_fold e2
+    | contains_fold (Fold _) = true
+    | contains_fold (Unop (oper,e)) = contains_fold e
+    | contains_fold (Binop (oper,e1,e2)) = contains_fold e1 orelse contains_fold e2
 end
 

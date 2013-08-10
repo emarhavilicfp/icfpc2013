@@ -65,14 +65,18 @@ struct
     List.concat $ List.concat $
       List.map (fn x => List.map (fn y => List.map (fn z => (x,y,z)) zs) ys) xs
 
-  fun generate_expr do_fold vars ops 0 = []
-    | generate_expr do_fold vars ops 1 = Zero::One::(List.map (fn x => Id x) vars)
-    | generate_expr do_fold vars ops size =
+  (* smaller_exprs is a memoization table -- (expr list ref) list ref. I hope!
+   * If the slot is empty, it means not computed yet (NONE).
+   * @mut ~[@mut ~[expr]], in rust, this would be. *)
+  fun generate_expr expr_table do_fold vars ops 0 = []
+    | generate_expr expr_table do_fold vars ops 1 =
+        Zero::One::(List.map (fn x => Id x) vars)
+    | generate_expr expr_table do_fold vars ops size =
       let
         (* FIXME: thread this through to avoid regenerating *)
         (* FIXME: segregate this based on fold vs not fold *)
         val all_smaller_exprs =
-          List.tabulate (size, fn x => generate_expr do_fold vars ops x)
+          List.tabulate (size, fn x => generate_expr expr_table do_fold vars ops x)
 
         (* Generate unary expressions. *)
         val unaries =
@@ -115,7 +119,9 @@ struct
   fun generate (spec: Solver.spec) : program list =
     let
       val top_x = Symbol.gensym()
-      val exprs = generate_expr true [top_x] (#ops spec) (#size spec - 1)
+      val inner_size = #size spec - 1
+      val expr_table = ref $ List.tabulate (inner_size, fn _ => ref [])
+      val exprs = generate_expr expr_table true [top_x] (#ops spec) inner_size
     in
       List.map (fn expr => Lambda (top_x, expr)) exprs
     end
@@ -130,6 +136,8 @@ struct
     Assert.assert "partition2 5" (List.length (partition2 5) = 2),
     Assert.assert "partition2 6" (List.length (partition2 6) = 3),
     Assert.assert "partition2 10" (List.length (partition2 10) = 5),
+    Assert.assert "partition3 3" (partition3 3 = [(1,1,1)]),
+    Assert.assert "partition3 4" (List.length (partition3 4) = 3),
     Assert.assert "generate 2" (List.length (generate {size = 2, ops = []}) = 3),
     Assert.assert "generate 3" (List.length (generate {size = 3,
                                                        ops = all_operators}) = 15),
