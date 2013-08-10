@@ -2,7 +2,7 @@ structure BruteSolve =
 struct
   open Haskell
   
-  fun log s = let open TextIO in output (stdErr, s); flushOut stdErr end
+  val log = Flags.log
   
   structure MT = MersenneTwister
   val mt = ref (MT.init32 0w0)
@@ -39,6 +39,10 @@ struct
         case disambiguate choices
         of SOME x => x :: (ndisambig choices (n-1))
          | NONE => ndisambig choices (n-1)
+  
+  (* Quickly get n random inputs.  They might help, they might not -- but we
+     have far too many functions to evaluate all of them right now.  *)
+  fun quickn n = List.tabulate (n, fn _ => random ())
 
   datatype narrowed = Separated of BV.program list 
                     | Inseparable of BV.program list
@@ -72,10 +76,14 @@ struct
       val len = case possible
                  of Separated ps => length ps
                   | Inseparable ps => length ps
+      val possible' =
+          case (possible, length choices = len)
+          of (Separated ps, true) => Inseparable ps
+           | (ps, _) => ps
       val _ = log ("Narrowed " ^ (Int.toString $ length choices) ^
                    " to " ^ (Int.toString $ len) ^ "\n")
     in
-      possible
+      possible'
     end
 
   fun solve a =
@@ -87,7 +95,13 @@ struct
         | rep (Separated (p :: nil)) = ServerIO.guess p
         | rep (Separated ps) =
           let
-            val inputs = ndisambig ps (!Flags.nquestions)
+            val _ = log ("solve: rep: creating inputs for "^(Int.toString $ length ps)^" programs...\n");
+            val inputs =
+              if (length ps) > 1500000
+              then (log ((Int.toString $ length ps) ^ " is *far* too many to evaluate on...\n");
+                    quickn $ Int.min (4, !Flags.nquestions))
+              else ndisambig ps (!Flags.nquestions)
+            val _ = log ("solve: rep: narrowing...\n");
           in
             rep (narrow ps (UNKNOWN inputs))
           end
@@ -104,7 +118,7 @@ struct
                                 ours = ours } =>
                rep (narrow ps $ KNOWN (inp, exp))
           end
-
+      val _ = log ("solve: generating...\n")
       val res = rep (Separated (Brute.generate a))
       val _ = Flags.seed := MT.rand32 (!mt)
     in

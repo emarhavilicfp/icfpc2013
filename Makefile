@@ -12,7 +12,7 @@ check: FORCE
 solve-mlton: FORCE
 	mllex lang/bv.lex
 	mlyacc lang/bv.grm
-	mlton -codegen c -profile time -profile-branch true -output bin/solve-mlton solve.mlb
+	mlton -runtime gc-summary -codegen c -profile time -profile-branch true -output bin/solve-mlton solve.mlb
 
 reallyclean: clean
 	${RM} parse/*.lex.* parse/*.grm.*

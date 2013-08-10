@@ -12,6 +12,8 @@ sig
   val seed : Word32.word ref
   
   val reset : unit -> unit	(* Anus... *)
+  
+  val log : string -> unit
 end
 
 structure Flags :> FLAGS =
@@ -29,5 +31,15 @@ struct
   fun reset () =
     (List.app Flag.unset [verbose, ast,
                           ir, assem, liveness, safe])
+  
+  (* Might as well go here, I guess. *)
+  fun log s =
+    let
+      open TextIO
+    in
+      output (stdErr, s);
+      flushOut stdErr
+    end
+
 end
   
