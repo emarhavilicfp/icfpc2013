@@ -73,7 +73,11 @@ struct
 
   (* Programs -> Text *)
 
-  fun show_id id = Int.toString id
+  exception BadID
+  fun show_id 0 = "x"
+    | show_id 1 = "y"
+    | show_id 2 = "z"
+    | show_id _ = raise BadID
 
   fun show_unop Not   = "not"
     | show_unop Shl1  = "shl1"

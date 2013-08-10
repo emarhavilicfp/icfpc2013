@@ -2,7 +2,7 @@
 structure Brute =
 struct
   open Haskell;
-  open BVP;
+  open BV;
 
   exception Impossible
 
@@ -44,7 +44,7 @@ struct
 
   fun eq e1 e2 = e1 = e2 orelse
         (constexpr e1 andalso constexpr e2 andalso
-         Eval.eval_expr Symbol.empty e1 = Eval.eval_expr Symbol.empty e2)
+         Eval.eval_constexpr e1 = Eval.eval_constexpr e2)
 
   (* TODO: Later. Possible optimization. Separate out the types of ops into
    * separate lists at the top level, rather than at every nobe. *)
@@ -139,7 +139,7 @@ struct
 
   (* Associative map from list of variables in scope to all possible exprs.
    * The bool (part of the key) expresses whether a fold is allowed. *)
-  type memo_table_slot = (Symbol.symbol list * bool * expr list) list
+  type memo_table_slot = (id list * bool * expr list) list
   (* Each slot in the memo table corresponds to a given size of expression.
    * Slots 0 and 1 are unused (I can't see it helping there!). *)
   type memo_table = memo_table_slot Array.array
@@ -149,7 +149,7 @@ struct
         Zero::One::(List.map (fn x => Id x) vars)
     | generate_expr table do_fold vars ops size =
       let
-        fun sameset (xs: Symbol.symbol list) (ys: Symbol.symbol list) =
+        fun sameset (xs: id list) (ys: id list) =
           List.all (fn x => List.exists (fn y => y=x) ys) xs andalso
           List.all (fn y => List.exists (fn x => x=y) xs) ys
         val _ = Assert.assert "negative size" $ size >= 0

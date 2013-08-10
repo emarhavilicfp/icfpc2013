@@ -2,8 +2,8 @@ signature EVAL =
 sig
   type word
 
-  val eval : BVP.program -> word -> word
-  val eval_expr : word Symbol.table -> BVP.expr -> word
+  val eval : BV.program -> word -> word
+  val eval_constexpr : BV.expr -> word
 end
 
 structure Eval : EVAL =
@@ -16,9 +16,9 @@ struct
         | fold' n res vec =
             let
               val lowByte = Word64.andb (vec, 0wxFF)
-              val G' = Symbol.bind G (acc, res)
-              val G' = Symbol.bind G' (e, lowByte)
-              val res' = eval_expr G' step
+              val _ = Array.update (G, acc, res)
+              val _ = Array.update (G, e, lowByte)
+              val res' = eval_expr G step
             in
               fold' (n-1) res' (Word64.>> (vec, 0w8))
             end
@@ -26,36 +26,46 @@ struct
       fold' 8 init vec
     end
 
-  and eval_unop G BVP.Not e = Word64.notb (eval_expr G e)
-    | eval_unop G BVP.Shl1 e = Suq.Word64.<< (eval_expr G e, Word32.fromInt 1)
-    | eval_unop G BVP.Shr1 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 1)
-    | eval_unop G BVP.Shr4 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 4)
-    | eval_unop G BVP.Shr16 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 16)
+  and eval_unop G BV.Not e = Word64.notb (eval_expr G e)
+    | eval_unop G BV.Shl1 e = Suq.Word64.<< (eval_expr G e, Word32.fromInt 1)
+    | eval_unop G BV.Shr1 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 1)
+    | eval_unop G BV.Shr4 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 4)
+    | eval_unop G BV.Shr16 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 16)
 
-  and eval_binop G BVP.And e1 e2 = Word64.andb (eval_expr G e1, eval_expr G e2)
-    | eval_binop G BVP.Or e1 e2 = Word64.orb (eval_expr G e1, eval_expr G e2)
-    | eval_binop G BVP.Xor e1 e2 = Word64.xorb (eval_expr G e1, eval_expr G e2)
-    | eval_binop G BVP.Plus e1 e2 = Word64.+ (eval_expr G e1, eval_expr G e2)
+  and eval_binop G BV.And e1 e2 = Word64.andb (eval_expr G e1, eval_expr G e2)
+    | eval_binop G BV.Or e1 e2 = Word64.orb (eval_expr G e1, eval_expr G e2)
+    | eval_binop G BV.Xor e1 e2 = Word64.xorb (eval_expr G e1, eval_expr G e2)
+    | eval_binop G BV.Plus e1 e2 = Word64.+ (eval_expr G e1, eval_expr G e2)
 
-  and eval_expr _ BVP.Zero = Word64.fromInt 0
-    | eval_expr _ BVP.One = Word64.fromInt 1
-    | eval_expr G (BVP.Id i) = Symbol.look' G i
-    | eval_expr G (BVP.Ifz (e, e1, e2)) =
+  and eval_expr _ BV.Zero = Word64.fromInt 0
+    | eval_expr _ BV.One = Word64.fromInt 1
+    | eval_expr G (BV.Id i) = Array.sub (G, i)
+    | eval_expr G (BV.Ifz (e, e1, e2)) =
       (case Word64.compare (eval_expr G e, Word64.fromInt 0) of
           EQUAL => eval_expr G e1
         | _ => eval_expr G e2)
-    | eval_expr G (BVP.Fold (vec, init, e, acc, step)) =
+    | eval_expr G (BV.Fold (vec, init, e, acc, step)) =
       let
         val vec' = eval_expr G vec
         val init' = eval_expr G init
+        (* Allow for shadowing *)
+        val G' = Array.array (3, 0w0)
+        val _ = Array.copy {src=G, dst=G', di=0}
       in
-        eval_fold G vec' init' e acc step
+        eval_fold G' vec' init' e acc step
       end
-    | eval_expr G (BVP.Unop (oper, e)) = eval_unop G oper e
-    | eval_expr G (BVP.Binop (oper, e1, e2)) = eval_binop G oper e1 e2
+    | eval_expr G (BV.Unop (oper, e)) = eval_unop G oper e
+    | eval_expr G (BV.Binop (oper, e1, e2)) = eval_binop G oper e1 e2
 
-  fun eval (BVP.Lambda (i, e)) w =
+  fun eval_constexpr e =
     let
-      val G = Symbol.bind Symbol.empty (i, w)
+      (* Don't tread on me *)
+      val G = Array.array (0, 0w0)
+    in eval_expr G e end
+
+  fun eval (BV.Lambda (i, e)) w =
+    let
+      val G = Array.array (3, 0w0)
+      val _ = Array.update(G, i, w)
     in eval_expr G e end
 end

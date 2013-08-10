@@ -16,32 +16,12 @@ sig
                 | Fold of expr * expr * id * id * expr
                 | Unop of unop * expr
                 | Binop of binop * expr * expr
-  
-  datatype operator = O_Unop of unop
-                    | O_Binop of binop
-                    | O_Ifz
-                    | O_Tfold
-                    | O_Fold
 
   datatype program = Lambda of id * expr
 
   val show : program -> string
   val show_expr : expr -> string
 
-  val all_operators        : operator list
-  val all_operators_tfold  : operator list
-  val all_operators_nofold : operator list
-
-  val contains_fold_expr : expr -> bool
-  val contains_fold      : program -> bool
-
-  val check_freevars_expr : Symbol.symbol list -> expr-> bool
-  val check_freevars      : program -> bool
-
-  val size_expr : expr -> int
-  val size      : program -> int
-
-  val constexpr : expr -> bool
 end
 
 structure BVP : BVP =
@@ -99,68 +79,5 @@ struct
           "(" ^ show_binop oper ^ " " ^ show_expr e1 ^ " " ^ show_expr e2 ^ ")"
 
   fun show (Lambda (x,e)) = "(lambda (" ^ show_id x ^ ") " ^ show_expr e ^ ")"
-
-  (* computing AST size *)
-
-  fun size_expr Zero = 1
-    | size_expr One = 1
-    | size_expr (Id x) = 1
-    | size_expr (Ifz (e0,e1,e2)) =
-        1 + size_expr e0 + size_expr e1 + size_expr e2
-    | size_expr (Fold (ev,e0,x,y,e)) =
-        2 + size_expr ev + size_expr e0 + size_expr e
-    | size_expr (Unop (oper,e)) = 1 + size_expr e
-    | size_expr (Binop (oper,e1,e2)) = 1 + size_expr e1 + size_expr e2
-
-  fun size (Lambda (x,e)) = 1 + size_expr e
-
-  (* miscellaneous *)
-
-  val all_operators_nofold =
-    List.map (fn x => O_Unop x) [Not, Shl1, Shr1, Shr4, Shr16]@
-    List.map (fn x => O_Binop x) [And, Or, Xor, Plus]@
-    [O_Ifz]
-  val all_operators = O_Fold::all_operators_nofold
-  val all_operators_tfold = O_Tfold::all_operators_nofold
-
-  fun contains_fold_expr Zero = false
-    | contains_fold_expr One = false
-    | contains_fold_expr (Id _) = false
-    | contains_fold_expr (Ifz (e0,e1,e2)) =
-        contains_fold_expr e0 orelse contains_fold_expr e1 orelse contains_fold_expr e2
-    | contains_fold_expr (Fold _) = true
-    | contains_fold_expr (Unop (oper,e)) = contains_fold_expr e
-    | contains_fold_expr (Binop (oper,e1,e2)) =
-        contains_fold_expr e1 orelse contains_fold_expr e2
-
-  fun contains_fold (Lambda (_,e)) = contains_fold_expr e
-
-  fun check_freevars_expr g Zero = true
-    | check_freevars_expr g One = true
-    | check_freevars_expr g (Id x) = List.exists (fn y => y=x) g
-    | check_freevars_expr g (Ifz (e0,e1,e2)) =
-        check_freevars_expr g e0 andalso
-        check_freevars_expr g e1 andalso
-        check_freevars_expr g e2
-    | check_freevars_expr g (Fold (e0,e1,x,y,e2)) =
-        check_freevars_expr g e0 andalso
-        check_freevars_expr g e1 andalso
-        check_freevars_expr (x::y::g) e2
-    | check_freevars_expr g (Unop (oper,e)) = check_freevars_expr g e
-    | check_freevars_expr g (Binop (oper,e1,e2)) =
-        check_freevars_expr g e1 orelse check_freevars_expr g e2
-
-  fun check_freevars (Lambda (x,e)) = check_freevars_expr [x] e
-
-  fun constexpr Zero = true
-    | constexpr One = true
-    | constexpr (Id _) = false
-    | constexpr (Ifz (e0,e1,e2)) =
-        constexpr e0 andalso constexpr e1 andalso constexpr e2
-    | constexpr (Fold (e0,e1,x,y,e2)) =
-        constexpr e0 andalso constexpr e1 andalso constexpr e2
-    | constexpr (Unop (oper,e)) = constexpr e
-    | constexpr (Binop (oper,e1,e2)) =
-        constexpr e1 andalso constexpr e2
 end
 
