@@ -28,7 +28,9 @@ sig
   val show : program -> string
   val show_expr : expr -> string
 
-  val all_operators : operator list
+  val all_operators        : operator list
+  val all_operators_tfold  : operator list
+  val all_operators_nofold : operator list
 
   val contains_fold : expr -> bool
 end
@@ -105,10 +107,12 @@ struct
 
   (* miscellaneous *)
 
-  val all_operators =
+  val all_operators_nofold =
     List.map (fn x => O_Unop x) [Not, Shl1, Shr1, Shr4, Shr16]@
     List.map (fn x => O_Binop x) [And, Or, Xor, Plus]@
-    [O_Ifz, O_Tfold, O_Fold]
+    [O_Ifz]
+  val all_operators = O_Fold::all_operators_nofold
+  val all_operators_tfold = O_Tfold::all_operators_nofold
 
   fun contains_fold Zero = false
     | contains_fold One = false
