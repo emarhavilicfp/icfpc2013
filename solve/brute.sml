@@ -48,8 +48,14 @@ struct
     let
       fun allowed (O_Unop x) = SOME x
         | allowed _ = NONE
+      (* Same as maybe_add_op in add_binop below. "Shl1 Zero" is the canonical. *)
+      fun add_op_unless_id x = (case e of Zero => NONE | _ => SOME $ Unop(x,e))
+      fun maybe_add_op Shr1  = add_op_unless_id Shr1
+        | maybe_add_op Shr4  = add_op_unless_id Shr4
+        | maybe_add_op Shr16 = add_op_unless_id Shr16
+        | maybe_add_op x = SOME $ Unop(x,e)
     in
-      List.map (fn x => Unop (x,e)) $ List.mapPartial allowed ops
+      List.mapPartial maybe_add_op $ List.mapPartial allowed ops
     end
   fun add_binop ops (e1,e2) =
     let
@@ -59,10 +65,9 @@ struct
       * binop-expr, "xor 0 e". Hence "or 0 e" and "plus 0 e" are redundant. (NB.
       * We CANNOT canonicalize "op x (op y z)" to "op (op x y) z" because
       * 'partition' doesn't emit size-pairs that are lopsided in that direction. *)
-      fun maybe_add_op Or =
-            (case e1 of Zero => NONE | _ => SOME $ Binop(Or,e1,e2))
-        | maybe_add_op Plus =
-            (case e1 of Zero => NONE | _ => SOME $ Binop(Plus,e1,e2))
+      fun add_op_unless_id x = (case e1 of Zero => NONE | _ => SOME $ Binop(x,e1,e2))
+      fun maybe_add_op Or   = add_op_unless_id Or
+        | maybe_add_op Plus = add_op_unless_id Plus
         | maybe_add_op x = SOME $ Binop(x,e1,e2)
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
@@ -258,11 +263,11 @@ struct
     Assert.assert "partition3 4" (List.length (partition3 4) = 3),
     Assert.assert "generate 2" (List.length (generate {size = 2, ops = []}) = 3),
     Assert.assert "generate 3"
-      (List.length (generate {size = 3, ops = all_operators}) = 15),
+      (List.length (generate {size = 3, ops = all_operators}) = 12),
     Assert.assert "generate 3 nofold"
-      (List.length (generate {size = 3, ops = all_operators_nofold}) = 15),
+      (List.length (generate {size = 3, ops = all_operators_nofold}) = 12),
     Assert.assert "generate 3 tfold"
-      (List.length (generate {size = 3, ops = all_operators_tfold}) = 15),
+      (List.length (generate {size = 3, ops = all_operators_tfold}) = 12),
     Assert.assert "generate 5"
       (List.length (generate {size = 5, ops = all_operators}) < 653),
     Assert.assert "generate 6 fold doesn't escape" $
