@@ -79,7 +79,7 @@ struct
         Zero::One::(List.map (fn x => Id x) vars)
     | generate_expr table do_fold vars ops size =
       let
-        fun sameset xs ys =
+        fun sameset (xs: Symbol.symbol list) (ys: Symbol.symbol list) =
           List.all (fn x => List.exists (fn y => y=x) ys) xs andalso
           List.all (fn y => List.exists (fn x => x=y) xs) ys
         val _ = Assert.assert "negative size" $ size >= 0
@@ -89,46 +89,56 @@ struct
         (* fallback function for cache miss *)
         fun generate_expr_miss () =
           let
-            (* FIXME: thread this through to avoid regenerating *)
-            (* FIXME: segregate this based on fold vs not fold *)
-            val all_smaller_exprs =
-              List.tabulate (size, fn x => generate_expr table do_fold vars ops x)
+            fun smaller_exprs n = generate_expr table do_fold vars ops n
+            fun smaller_exprs_fold newvars n = generate_expr table false newvars ops n
 
             (* Generate unary expressions. *)
             val unaries =
-              List.concat $ List.map (add_unop ops) $
-                List.nth (all_smaller_exprs, size-1)
+                List.concat $ List.map (add_unop ops) $ smaller_exprs $ size-1
 
             (* Generate binary expressions. *)
-            (* TODO: Long-term: Can prune out duplciate Binop(e1,e2), Binop(e2,e1)
+            (* TODO: Long-term: Can prune out duplicate Binop(e1,e2), Binop(e2,e1)
              * in case where the partition is the same size on both sides *)
             val all_smaller_pairs : (expr * expr) list =
               List.concat $ List.map allpairs $
-                List.map (fn (x,y) => (List.nth (all_smaller_exprs,x),
-                                       List.nth (all_smaller_exprs,y)))
+                List.map (fn (x,y) => (smaller_exprs x, smaller_exprs y))
                          (partition2 $ size-1)
             val binaries =
               (* note: partition2 emits [] if size < 3 *)
               List.concat $ List.map (add_binop ops) $ all_smaller_pairs
 
             (* Generate ternary expressions. *)
-            (* TODO: As above todo in add_unops. Lift. *)
+            (* TODO: As far-above todo in add_unops. Lift. *)
             val allowed_ifz = List.exists (fn x => x = O_Ifz) ops
 
             val ifzs = if not allowed_ifz then [] else
               let
                 val all_smaller_trips : (expr * expr * expr) list =
                   List.concat $ List.map alltriples $
-                    List.map (fn (x,y,z) => (List.nth (all_smaller_exprs,x),
-                                             List.nth (all_smaller_exprs,y),
-                                             List.nth (all_smaller_exprs,z)))
+                    List.map (fn (x,y,z) =>
+                                (smaller_exprs x, smaller_exprs y, smaller_exprs z))
                              (partition3 $ size-1)
               in
                 List.map Ifz all_smaller_trips
               end
 
-            val folds = []
-            val result = List.concat [unaries, binaries, ifzs, folds]
+            val folds = if not do_fold then [] else
+              let
+                val elt_var = Symbol.gensym()
+                val acc_var = Symbol.gensym()
+                val newvars = elt_var::acc_var::vars
+                val all_smaller_trips : (expr * expr * expr) list =
+                  List.concat $ List.map alltriples $
+                    List.map (fn (x,y,z) => (smaller_exprs_fold vars x,
+                                             smaller_exprs_fold vars y,
+                                             smaller_exprs_fold newvars z))
+                             (partition3 $ size-2) (* NOTE fold has size 2!! *)
+              in
+                List.map (fn (e0,e1,e2) => Fold (e0,e1,elt_var,acc_var,e2))
+                         all_smaller_trips
+              end
+
+            val result = List.concat [folds, ifzs, binaries, unaries]
           in
             Array.update (table, size, (vars, do_fold, result)::slot); result
           end
@@ -147,7 +157,7 @@ struct
                      SOME(_,false,exprs) => raise Fail "not possible"
                    | SOME(_,true,exprs) =>
                        let
-                         val nofolds = List.filter (not o contains_fold) exprs
+                         val nofolds = List.filter (not o contains_fold_expr) exprs
                          val newslot = (vars, false, nofolds)::slot
                        in
                          Array.update (table, size, newslot); nofolds
@@ -210,6 +220,9 @@ struct
       (List.length (generate {size = 3, ops = all_operators_tfold}) = 15),
     Assert.assert "generate 5"
       (List.length (generate {size = 5, ops = all_operators}) < 763),
+    Assert.assert "generate 6 fold doesn't escape" $
+      List.all check_freevars $ List.filter contains_fold $
+        generate {size = 6, ops = all_operators},
     true
     ]
 end

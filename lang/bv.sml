@@ -32,7 +32,11 @@ sig
   val all_operators_tfold  : operator list
   val all_operators_nofold : operator list
 
-  val contains_fold : expr -> bool
+  val contains_fold_expr : expr -> bool
+  val contains_fold      : program -> bool
+
+  val check_freevars_expr : Symbol.symbol list -> expr-> bool
+  val check_freevars      : program -> bool
 end
 
 structure BV : BV =
@@ -114,13 +118,33 @@ struct
   val all_operators = O_Fold::all_operators_nofold
   val all_operators_tfold = O_Tfold::all_operators_nofold
 
-  fun contains_fold Zero = false
-    | contains_fold One = false
-    | contains_fold (Id _) = false
-    | contains_fold (Ifz (e0,e1,e2)) =
-          contains_fold e0 orelse contains_fold e1 orelse contains_fold e2
-    | contains_fold (Fold _) = true
-    | contains_fold (Unop (oper,e)) = contains_fold e
-    | contains_fold (Binop (oper,e1,e2)) = contains_fold e1 orelse contains_fold e2
+  fun contains_fold_expr Zero = false
+    | contains_fold_expr One = false
+    | contains_fold_expr (Id _) = false
+    | contains_fold_expr (Ifz (e0,e1,e2)) =
+        contains_fold_expr e0 orelse contains_fold_expr e1 orelse contains_fold_expr e2
+    | contains_fold_expr (Fold _) = true
+    | contains_fold_expr (Unop (oper,e)) = contains_fold_expr e
+    | contains_fold_expr (Binop (oper,e1,e2)) =
+        contains_fold_expr e1 orelse contains_fold_expr e2
+
+  fun contains_fold (Lambda (_,e)) = contains_fold_expr e
+
+  fun check_freevars_expr g Zero = true
+    | check_freevars_expr g One = true
+    | check_freevars_expr g (Id x) = List.exists (fn y => y=x) g
+    | check_freevars_expr g (Ifz (e0,e1,e2)) =
+        check_freevars_expr g e0 andalso
+        check_freevars_expr g e1 andalso
+        check_freevars_expr g e2
+    | check_freevars_expr g (Fold (e0,e1,x,y,e2)) =
+        check_freevars_expr g e0 andalso
+        check_freevars_expr g e1 andalso
+        check_freevars_expr (x::y::g) e2
+    | check_freevars_expr g (Unop (oper,e)) = check_freevars_expr g e
+    | check_freevars_expr g (Binop (oper,e1,e2)) =
+        check_freevars_expr g e1 orelse check_freevars_expr g e2
+
+  fun check_freevars (Lambda (x,e)) = check_freevars_expr [x] e
 end
 
