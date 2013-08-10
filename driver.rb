@@ -83,7 +83,8 @@ def main
             transcribe result['values'].map {|x| "SOLVER_OUT: #{x}"}
             solver_io << result['values'].join("\n") + "\n"
           elsif result['status'] == 'error'
-            raise "API ERROR: #{result['message']}"
+            transcribe "SOLVER_OUT: MAYBE"
+            solver_io << "MAYBE\n"
           else
             raise "Something went wrong: we got: #{result}"
           end
