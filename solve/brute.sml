@@ -30,20 +30,32 @@ struct
     end
 
   fun add_unop e = List.map (fn x => Unop (x,e)) [Not, Shl1, Shr1, Shr4, Shr16]
-  fun add_binop e1 e2 = List.map (fn x => Binop (x,e1,e2)) [And, Or, Xor, Plus]
+  fun add_binop (e1,e2) = List.map (fn x => Binop (x,e1,e2)) [And, Or, Xor, Plus]
+
+  (* danger, combinatorics *)
+  fun allpairs (xs: 'a list, ys: 'a list) : ('a * 'a) list =
+    List.concat $ List.map (fn x => List.map (fn y => (x,y)) ys) xs
 
   fun generate_expr do_fold vars 0 = raise Impossible
     | generate_expr do_fold vars 1 = Zero::One::(List.map (fn x => Id x) vars)
     | generate_expr do_fold vars size =
       let
-        (* TODO: thread this through to avoid regenerating *)
+        (* FIXME: thread this through to avoid regenerating *)
         val all_smaller_exprs =
           List.tabulate (size, fn x => generate_expr do_fold vars x)
         val unaries =
           List.concat $ List.map add_unop $ List.nth (all_smaller_exprs, size-1)
+        (* TODO: Long-term: Can prune out duplciate Binop(e1,e2), Binop(e2,e1)
+         * in case where the partition is the same size on both sides *)
+        (* FIXME XXX handle fold *)
+        val all_smaller_pairs : (expr list * expr list) list =
+          List.map (fn (x,y) => (List.nth (all_smaller_exprs,x),
+                                 List.nth (all_smaller_exprs,y))) (partition3 $ size-1)
+        val all_smaller_pairs' : (expr * expr) list =
+          List.concat $ List.map allpairs $ all_smaller_pairs
         val binaries =
           (* note: partition2 emits [] if size < 3 *)
-          raise Impossible (* TODO *)
+          List.concat $ List.map add_binop $ all_smaller_pairs'
         val ternaries =
           (* note: partition3 emits [] if size < 4 *)
           raise Impossible (* TODO *)
@@ -51,5 +63,5 @@ struct
         List.concat $ [unaries, binaries, ternaries]
       end
 
-  fun generate size = raise Impossible
+  fun generate (size, allowed_ops): Solver.spec -> program list = raise Impossible
 end
