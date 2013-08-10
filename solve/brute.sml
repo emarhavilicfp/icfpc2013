@@ -65,9 +65,15 @@ struct
       * binop-expr, "xor 0 e". Hence "or 0 e" and "plus 0 e" are redundant. (NB.
       * We CANNOT canonicalize "op x (op y z)" to "op (op x y) z" because
       * 'partition' doesn't emit size-pairs that are lopsided in that direction. *)
-      fun add_op_unless_id x = (case e1 of Zero => NONE | _ => SOME $ Binop(x,e1,e2))
+      fun add_op_unless_id x =
+        (case (e1,e2) of (Zero,Zero) => NONE | (Zero,_) => NONE | (_,Zero) => NONE
+                       | _ => SOME $ Binop(x,e1,e2))
       fun maybe_add_op Or   = add_op_unless_id Or
         | maybe_add_op Plus = add_op_unless_id Plus
+        | maybe_add_op Xor  =
+            (* Note! Danger! This is ONLY safe for "case e2", not "case e1", for
+             * the reason outlined in the above comment. *)
+            (case e2 of Zero => NONE | _ => SOME $ Binop(Xor,e1,e2))
         | maybe_add_op x = SOME $ Binop(x,e1,e2)
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
