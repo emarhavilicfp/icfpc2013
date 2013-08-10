@@ -202,10 +202,14 @@ struct
     Assert.assert "partition3 3" (partition3 3 = [(1,1,1)]),
     Assert.assert "partition3 4" (List.length (partition3 4) = 3),
     Assert.assert "generate 2" (List.length (generate {size = 2, ops = []}) = 3),
-    Assert.assert "generate 3" (List.length (generate {size = 3,
-                                                       ops = all_operators}) = 15),
-    Assert.assert "generate 5" (List.length (generate {size = 5,
-                                                       ops = all_operators}) < 763),
+    Assert.assert "generate 3"
+      (List.length (generate {size = 3, ops = all_operators}) = 15),
+    Assert.assert "generate 3 nofold"
+      (List.length (generate {size = 3, ops = all_operators_nofold}) = 15),
+    Assert.assert "generate 3 tfold"
+      (List.length (generate {size = 3, ops = all_operators_tfold}) = 15),
+    Assert.assert "generate 5"
+      (List.length (generate {size = 5, ops = all_operators}) < 763),
     true
     ]
 end
