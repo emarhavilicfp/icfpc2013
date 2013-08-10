@@ -54,6 +54,7 @@ Group is
 	lang/bv-test.sml
     lang/evaluator.sml
     lang/elab.sml
+    lang/test-util.sml
 
 	top/solver.sml
 
