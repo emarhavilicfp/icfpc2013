@@ -148,6 +148,8 @@ struct
     fun run_test (testfn, name) = let
       val _ = say_nonewline $ name ^ "... "
       val r = testfn()
+                handle e => (say_red ("Test " ^ name ^ " raised " ^ exnMessage e);
+                             false)
       val _ = if r then say_green "%% OK %%" else say_red "!! FAIL !!"
     in r
     end
