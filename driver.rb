@@ -64,7 +64,7 @@ def main
     end
   end
 
-  transcribe "INVOKE_SOLVER: #{solver_args}"
+  transcribe "INVOKE_SOLVER: sh -c 'bin/solve #{solver_args}'"
   with_pipe solver_args do |solver_io|
     begin
       line = nil
