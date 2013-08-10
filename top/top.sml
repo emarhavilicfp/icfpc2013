@@ -143,7 +143,8 @@ struct
 
 
   fun check _ = let
-    val tests = [(BV_Test.test, "BV_Test"), (Brute.test, "Brute test")]
+    val tests = [(BV_Test.test, "BV_Test"), (Brute.test, "Brute test"),
+                 (EvalTest.test, "Eval test")]
           : ((unit -> bool) * string) list
     fun run_test (testfn, name) = let
       val _ = say_nonewline $ name ^ "... "

@@ -69,3 +69,32 @@ struct
       val _ = Array.update(G, i, w)
     in eval_expr G e end
 end
+
+structure EvalTest =
+struct
+  open Eval;
+  open Haskell;
+
+  fun eval_str msg str input expected =
+    let
+      val result = eval (TestUtil.Parse str) (Word64.fromInt input)
+    in
+      Assert.assert (msg ^ " expected: " ^ Int.toString expected
+                         ^ " got: " ^ Word64.toString result) $
+        (Word64.fromInt expected) = result
+    end
+
+  fun test () = List.all (fn x => x) [
+    eval_str "basic test" "(lambda (x) (plus x x))" 10 20,
+    eval_str "2comp1" "(lambda (x) (plus (not x) 1))" 1 (~1),
+    eval_str "2comp4" "(lambda (x) (plus (not x) 1))" 4 (~4),
+    eval_str "fold1" "(lambda (x) (fold 0 0 (lambda (y z) (plus x z))))" 10 80,
+    eval_str "fold2" "(lambda (x) (fold 0 1 (lambda (y z) (shl1 z))))" 0 256,
+    eval_str "dauthi_marauder"
+      "(lambda (x) (fold 1 0 (lambda (x z) (plus x z))))" 0 1,
+    eval_str "dauthi_horror"
+      "(lambda (x) (fold x 0 (lambda (z x) (plus x x))))" (~1) 0,
+    eval_str "dauthi_slayer"
+      "(lambda (x) (fold x 0 (lambda (x z) (plus x x))))" (~1) (255*2),
+    true]
+end
