@@ -52,10 +52,16 @@ struct
       fun add_op_unless_id x = (case e of Zero => NONE | _ => SOME $ Unop(x,e))
       fun maybe_add_op Shl1  = add_op_unless_id Shl1
         | maybe_add_op Shr1  =
-            if e = One then NONE (* 1>>1 = 0 *)
-            else add_op_unless_id Shr1
-        | maybe_add_op Shr4  = add_op_unless_id Shr4
-        | maybe_add_op Shr16 = add_op_unless_id Shr16
+            (case e of One => NONE (* 1>>1 = 0 *)
+                     | (Unop (Shr1, Unop (Shr1, Unop (Shr1, _)))) => NONE (* shr4 *)
+                     | _ => add_op_unless_id Shr1)
+        | maybe_add_op Shr4  =
+            (case e of One => NONE (* 1>>4 = 0 *)
+                     | (Unop (Shr4, Unop (Shr4, Unop (Shr4, _)))) => NONE (* shr16 *)
+                     | _ => add_op_unless_id Shr4)
+        | maybe_add_op Shr16 =
+            if e = One then NONE (* 1>>16 = 0 *)
+            else add_op_unless_id Shr16
         | maybe_add_op Not =
             (case e of (Unop (Not, _)) => NONE | _ => SOME $ Unop(Not,e))
     in
@@ -75,7 +81,9 @@ struct
       fun maybe_add_op Or   =
             if e1 = One andalso e2 = One then NONE (* or 1 1 = 1 *)
             else add_op_unless_id Or
-        | maybe_add_op Plus = add_op_unless_id Plus
+        | maybe_add_op Plus =
+            if e1 = e2 then NONE (* plus e e = e<<1 *)
+            else add_op_unless_id Plus
         | maybe_add_op Xor  =
             if e1 = e2 then NONE (* xor e e = 0 *)
             else add_op_unless_id Xor
@@ -281,13 +289,13 @@ struct
     Assert.assert "partition3 4" (List.length (partition3 4) = 3),
     Assert.assert "generate 2" (List.length (generate {size = 2, ops = []}) = 3),
     Assert.assert "generate 3"
-      (List.length (generate {size = 3, ops = all_operators}) <= 13),
+      (List.length (generate {size = 3, ops = all_operators}) <= 11),
     Assert.assert "generate 3 nofold"
-      (List.length (generate {size = 3, ops = all_operators_nofold}) <= 13),
+      (List.length (generate {size = 3, ops = all_operators_nofold}) <= 11),
     Assert.assert "generate 3 tfold"
-      (List.length (generate {size = 3, ops = all_operators_tfold}) <= 13),
+      (List.length (generate {size = 3, ops = all_operators_tfold}) <= 11),
     Assert.assert "generate 5"
-      (List.length (generate {size = 5, ops = all_operators}) < 654),
+      (List.length (generate {size = 5, ops = all_operators}) < 534),
     Assert.assert "generate 6 fold doesn't escape" $
       List.all check_freevars $ List.filter contains_fold $
         generate {size = 6, ops = all_operators},
