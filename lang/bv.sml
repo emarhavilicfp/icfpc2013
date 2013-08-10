@@ -40,6 +40,8 @@ sig
 
   val size_expr : expr -> int
   val size      : program -> int
+
+  val constexpr : expr -> bool
 end
 
 structure BV : BV =
@@ -149,5 +151,16 @@ struct
         check_freevars_expr g e1 orelse check_freevars_expr g e2
 
   fun check_freevars (Lambda (x,e)) = check_freevars_expr [x] e
+
+  fun constexpr Zero = true
+    | constexpr One = true
+    | constexpr (Id _) = false
+    | constexpr (Ifz (e0,e1,e2)) =
+        constexpr e0 andalso constexpr e1 andalso constexpr e2
+    | constexpr (Fold (e0,e1,x,y,e2)) =
+        constexpr e0 andalso constexpr e1 andalso constexpr e2
+    | constexpr (Unop (oper,e)) = constexpr e
+    | constexpr (Binop (oper,e1,e2)) =
+        constexpr e1 andalso constexpr e2
 end
 

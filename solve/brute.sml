@@ -187,9 +187,8 @@ struct
                     List.map (fn (x,y,z) =>
                                 (smaller_exprs x, smaller_exprs y, smaller_exprs z))
                              (partition3 $ size-1)
-                fun nonconstant_ifz (Zero,_,_) = false (* TODO *)
-                  | nonconstant_ifz (One,_,_) = false
-                  | nonconstant_ifz (_,e1 : expr, e2 : expr) = e1 <> e2
+                fun nonconstant_ifz (e0 : expr, e1 : expr, e2 : expr) =
+                      (not $ constexpr e0) andalso e1 <> e2
               in
                 List.map Ifz $ List.filter nonconstant_ifz all_smaller_trips
               end
