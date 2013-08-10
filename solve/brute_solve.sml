@@ -44,8 +44,8 @@ struct
      have far too many functions to evaluate all of them right now.  *)
   fun quickn n = List.tabulate (n, fn _ => random ())
 
-  datatype narrowed = Separated of BV.program list 
-                    | Inseparable of BV.program list
+  datatype narrowed = Separated of BVP.program list 
+                    | Inseparable of BVP.program list
   datatype narrowinput = KNOWN of Word64.word * Word64.word
                        | UNKNOWN of Word64.word list
 

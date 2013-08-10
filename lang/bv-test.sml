@@ -1,6 +1,6 @@
 structure BV_Test =
 struct
-  open BV
+  open BVP
   open Haskell
 
   fun test () = let

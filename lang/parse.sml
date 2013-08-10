@@ -11,7 +11,7 @@ sig
   (* parse filename = ast
    * will raise ErrorMsg.Error in case of lexing or parsing error
    *)
-  val parse : string -> BV.program
+  val parse : string -> BVP.program
 end
 
 structure Parse :> PARSE =

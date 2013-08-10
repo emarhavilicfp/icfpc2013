@@ -20,11 +20,11 @@
    EOF
 
 %nonterm 
-   program of BV.program
- | expr of BV.expr
- | binop of BV.binop
- | unop of BV.unop
- | id of BV.id
+   program of BVP.program
+ | expr of BVP.expr
+ | binop of BVP.binop
+ | unop of BVP.unop
+ | id of BVP.id
 
 %verbose                                (* print summary of errors *)
 %pos int                                (* positions *)
@@ -36,25 +36,25 @@
 
 %%
 
-program    : LPAREN LAMBDA LPAREN id RPAREN expr RPAREN (BV.Lambda (id, expr))
+program    : LPAREN LAMBDA LPAREN id RPAREN expr RPAREN (BVP.Lambda (id, expr))
 
-expr       : ZERO                  (BV.Zero)
-           | ONE                   (BV.One)
-           | id                    (BV.Id id)
-           | LPAREN IF0 expr expr expr RPAREN (BV.Ifz (expr1, expr2, expr3))
-           | LPAREN FOLD expr expr LPAREN LAMBDA LPAREN id id RPAREN expr RPAREN RPAREN (BV.Fold (expr1, expr2, id1, id2, expr3))
-           | LPAREN unop expr RPAREN (BV.Unop (unop, expr))
-           | LPAREN binop expr expr RPAREN (BV.Binop (binop, expr1, expr2))
+expr       : ZERO                  (BVP.Zero)
+           | ONE                   (BVP.One)
+           | id                    (BVP.Id id)
+           | LPAREN IF0 expr expr expr RPAREN (BVP.Ifz (expr1, expr2, expr3))
+           | LPAREN FOLD expr expr LPAREN LAMBDA LPAREN id id RPAREN expr RPAREN RPAREN (BVP.Fold (expr1, expr2, id1, id2, expr3))
+           | LPAREN unop expr RPAREN (BVP.Unop (unop, expr))
+           | LPAREN binop expr expr RPAREN (BVP.Binop (binop, expr1, expr2))
 
-unop       : NOT (BV.Not)
-           | SHL1 (BV.Shl1)
-           | SHR1 (BV.Shr1)
-           | SHR4 (BV.Shr4)
-           | SHR16 (BV.Shr16)
+unop       : NOT (BVP.Not)
+           | SHL1 (BVP.Shl1)
+           | SHR1 (BVP.Shr1)
+           | SHR4 (BVP.Shr4)
+           | SHR16 (BVP.Shr16)
 
-binop      : AND (BV.And)
-           | OR (BV.Or)
-           | XOR (BV.Xor)
-           | PLUS (BV.Plus)
+binop      : AND (BVP.And)
+           | OR (BVP.Or)
+           | XOR (BVP.Xor)
+           | PLUS (BVP.Plus)
 
 id         : IDENT (Symbol.symbol IDENT)

@@ -1,7 +1,7 @@
 (* BV language definition *)
-signature BV =
+signature BVP =
 sig
-  type id = int
+  type id = Symbol.symbol
 
   datatype unop = Not | Shl1 | Shr1 | Shr4 | Shr16
 
@@ -35,7 +35,7 @@ sig
   val contains_fold_expr : expr -> bool
   val contains_fold      : program -> bool
 
-  val check_freevars_expr : id list -> expr-> bool
+  val check_freevars_expr : Symbol.symbol list -> expr-> bool
   val check_freevars      : program -> bool
 
   val size_expr : expr -> int
@@ -44,10 +44,10 @@ sig
   val constexpr : expr -> bool
 end
 
-structure BV : BV =
+structure BVP : BVP =
 struct
 
-  type id = int
+  type id = Symbol.symbol
 
   datatype unop = Not | Shl1 | Shr1 | Shr4 | Shr16
 
@@ -73,7 +73,7 @@ struct
 
   (* Programs -> Text *)
 
-  fun show_id id = Int.toString id
+  fun show_id id = Symbol.name id
 
   fun show_unop Not   = "not"
     | show_unop Shl1  = "shl1"
@@ -148,7 +148,7 @@ struct
         check_freevars_expr (x::y::g) e2
     | check_freevars_expr g (Unop (oper,e)) = check_freevars_expr g e
     | check_freevars_expr g (Binop (oper,e1,e2)) =
-        check_freevars_expr g e1 andalso check_freevars_expr g e2
+        check_freevars_expr g e1 orelse check_freevars_expr g e2
 
   fun check_freevars (Lambda (x,e)) = check_freevars_expr [x] e
 

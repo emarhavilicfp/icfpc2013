@@ -2,7 +2,7 @@
 structure Brute =
 struct
   open Haskell;
-  open BV;
+  open BVP;
 
   exception Impossible
 
