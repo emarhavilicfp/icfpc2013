@@ -34,3 +34,4 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
     solve/brute_solve.sml
 
 	top/top.sml
+	top/top_mlton.sml

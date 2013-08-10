@@ -26,10 +26,10 @@ struct
     end
   
   and eval_unop G BV.Not e = Word64.notb (eval_expr G e)
-    | eval_unop G BV.Shl1 e = Word64.<< (eval_expr G e, Word31.fromInt 1)
-    | eval_unop G BV.Shr1 e = Word64.>> (eval_expr G e, Word31.fromInt 1)
-    | eval_unop G BV.Shr4 e = Word64.>> (eval_expr G e, Word31.fromInt 4)
-    | eval_unop G BV.Shr16 e = Word64.>> (eval_expr G e, Word31.fromInt 16)
+    | eval_unop G BV.Shl1 e = Suq.Word64.<< (eval_expr G e, Word32.fromInt 1)
+    | eval_unop G BV.Shr1 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 1)
+    | eval_unop G BV.Shr4 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 4)
+    | eval_unop G BV.Shr16 e = Suq.Word64.>> (eval_expr G e, Word32.fromInt 16)
 
   and eval_binop G BV.And e1 e2 = Word64.andb (eval_expr G e1, eval_expr G e2)
     | eval_binop G BV.Or e1 e2 = Word64.orb (eval_expr G e1, eval_expr G e2)
