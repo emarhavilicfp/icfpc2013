@@ -27,6 +27,8 @@ sig
 
   val show : program -> string
 
+  val all_operators : operator list
+
 end
 
 structure BV : BV =
@@ -55,6 +57,11 @@ struct
                     | O_Fold
 
   datatype program = Lambda of id * expr
+
+  val all_operators =
+    List.map (fn x => O_Unop x) [Not, Shl1, Shr1, Shr4, Shr16]@
+    List.map (fn x => O_Binop x) [And, Or, Xor, Plus]@
+    [O_Ifz, O_Tfold, O_Fold]
 
   (* Programs -> Text *)
 

@@ -22,6 +22,7 @@ sig
   val is_bogus : symbol -> bool 
 
   val reset : unit -> unit	(* resets the hash table in which the symbols are stored *)
+  val gensym : unit -> symbol (* generates a fresh symbol *)
   val symbol : string -> symbol (* generates a new symbol with given name *)
   val name : symbol -> string	(* returns a name associated with symbol *)
 
@@ -88,6 +89,17 @@ struct
 		   (name, i)
 		 end)
 
+  end
+
+  local
+    val counter = ref 0
+  in
+    fun gensym () =
+      let
+        val x = !counter
+      in
+        (counter := x+1; ("__gs",x))
+      end
   end
 
   fun name (n, i) = n
