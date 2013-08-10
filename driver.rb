@@ -69,7 +69,7 @@ def main
         transcribe "SOLVER_IN: #{line}"
         cmd, arg = line.split(":")
         if cmd == 'GUESS'
-          result = do_guess example['id'], arg
+          result = do_guess example['id'], arg.strip
           if result['status'] == 'win'
             transcribe "SOLVER_OUT: RIGHT"
             solver_io << "RIGHT\n"
@@ -143,14 +143,26 @@ def assert(x)
   end
 end
 
+DELAY = 5
 def icfp_post(method, body)
   uri = URI("http://icfpc2013.cloudapp.net/")
   http = Net::HTTP.new(uri.host, uri.port)
   req = Net::HTTP::Post.new("/#{method.to_s}?auth=#{AUTHKEY}vpsH1H")
   req.body = body.to_json
-  transcribe "API_REQUEST: #{method} #{req.body}"
-  result = http.request(req)
-  transcribe "API_RESPONSE: #{result.body}"
+  keep_going = true
+  while keep_going do
+    keep_going = false
+    starttime = Time.now.to_i
+    transcribe "API_REQUEST: #{method} #{req.body}"
+    result = http.request(req)
+    transcribe "API_RESPONSE: #{result.body}"
+    if result.body =~ /Too many requests/
+      if Time.now.to_i - starttime < DELAY
+        sleep (Time.now.to_i - starttime)
+      end
+      keep_going = true
+    end
+  end
   result
 end
 
