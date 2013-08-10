@@ -82,7 +82,7 @@ struct
           "(if0 " ^ show_expr e0 ^ " " ^ show_expr e1 ^ " " ^ show_expr e2 ^ ")"
     | show_expr (Fold (ev,e0,x,y,e)) =
           "(fold " ^ show_expr ev ^ " " ^ show_expr e0
-          ^ " (lambda (" ^ show_id x ^ " " ^ show_id y ^ ") " ^ show_expr e ^ ")"
+          ^ " (lambda (" ^ show_id x ^ " " ^ show_id y ^ ") " ^ show_expr e ^ "))"
     | show_expr (Unop (oper,e)) = "(" ^ show_unop oper ^ " " ^ show_expr e ^ ")"
     | show_expr (Binop (oper,e1,e2)) =
           "(" ^ show_binop oper ^ " " ^ show_expr e1 ^ " " ^ show_expr e2 ^ ")"
