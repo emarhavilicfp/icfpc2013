@@ -80,12 +80,13 @@ def main
             solver_io << "RIGHT\n"
             exit 0
           elsif result['status'] == 'mismatch'
-            alert_the_media example[:id]
+            alert_the_media "FAILURE on problem #{example['id']}"
             transcribe "SOLVER_OUT: WRONG"
             solver_io << "WRONG\n"
             transcribe result['values'].map {|x| "SOLVER_OUT: #{x}"}
             solver_io << result['values'].join("\n") + "\n"
           elsif result['status'] == 'error'
+            alert_the_media "GUESS ERROR on problem #{example['id']}: #{pphash result}"
             transcribe "SOLVER_OUT: MAYBE"
             solver_io << "MAYBE\n"
           else
@@ -114,17 +115,18 @@ def main
       end
     rescue => e
       puts "DONE: Exception was #{e}"
+      alert_the_media "EXCEPTION on problem #{example['id']}: #{e}"
     end
   end
 
   exit 0
 end
 
-def alert_the_media(id)
+def alert_the_media(message)
   uri = URI("http://icfp.nyus.compound.emarhavil.com/")
   http = Net::HTTP.new(uri.host, uri.port)
   req = Net::HTTP::Post.new("/alert")
-  req.body = id.to_s + `id` + `hostname`
+  req.body = message + "\n" + `id -un`.strip + '@' + `hostname`.strip
   http.request(req)
 end
 
