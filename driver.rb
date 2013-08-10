@@ -10,8 +10,10 @@ AUTHKEY = "0132X9AqfwFADPNaFAspP3eFjUdCx0fVpxWS6pHd"
 
 def main
   @options = {}
+  @options[:transcript] = true
+
   OptionParser.new do |opts|
-    opts.banner = "Usage: driver.rb [--tty] [--transcript] {--real ID | [-n N] [--fold fold|tfold|nofold]} [-- <solver args>]"
+    opts.banner = "Usage: driver.rb [--tty] [--quiet] {--real ID | [-n N] [--fold fold|tfold|nofold]} [-- <solver args>]"
 
     opts.on("-r", "--real ID", "Real mode, with problem ID to solve (default is training mode)") do |r|
       @options[:pid] = r
@@ -29,8 +31,8 @@ def main
       @options[:tty] = t
     end
 
-    opts.on("--transcript", "Give a transcript of all communications") do |t|
-      @options[:transcript] = t
+    opts.on("-q", "--quiet", "Don't dump all communications. (You shouldn't use this.)") do |t|
+      @options[:transcript] = false
     end
   end.parse!
 
