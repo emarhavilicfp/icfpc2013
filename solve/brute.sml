@@ -125,11 +125,9 @@ struct
   (* danger, combinatorics *)
   fun allpairs (xs: 'a list, ys: 'a list) : ('a * 'a) list =
     List.concat $ List.map (fn x => List.map (fn y => (x,y)) ys) xs
-  (* FIXME, I am broken *)
-  fun allpairs_no_refl (xs: expr list, ys: expr list) : (expr * expr) list =
-    List.concat $
-      List.map (fn x => List.mapPartial
-                          (fn y => if x = y then NONE else SOME(x,y)) ys) xs
+  fun allpairs_samesize [] = []
+    | allpairs_samesize ((x: expr)::rest) =
+        (x,x)::(List.map (fn y => (x,y)) rest)@(allpairs_samesize rest)
 
   fun alltriples (xs: 'a list, ys: 'a list, zs: 'a list) : ('a * 'a * 'a) list =
     List.concat $ List.concat $
@@ -165,15 +163,11 @@ struct
                 List.concat $ List.map (add_unop ops) $ smaller_exprs $ size-1
 
             (* Generate binary expressions. *)
-            (* TODO: Long-term: Can prune out duplicate Binop(e1,e2), Binop(e2,e1)
-             * in case where the partition is the same size on both sides *)
             val all_smaller_pairs : (expr * expr) list =
               List.concat $
                 List.map (fn (x,y) =>
                             if x=y then
-                              (* Optimize commutative binops here. *)
-                              (* XXX fix this *)
-                              allpairs (smaller_exprs x, smaller_exprs y)
+                              allpairs_samesize $ smaller_exprs x
                             else
                               allpairs (smaller_exprs x, smaller_exprs y))
                          (partition2 $ size-1)
