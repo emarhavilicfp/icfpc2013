@@ -26,6 +26,7 @@ sig
   datatype program = Lambda of id * expr
 
   val show : program -> string
+  val show_expr : expr -> string
 
   val all_operators : operator list
 
