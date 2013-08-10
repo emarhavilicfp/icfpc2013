@@ -12,14 +12,24 @@ struct
 
   datatype result = RIGHT | WRONG of {input: Word64.word, exp: Word64.word, ours: Word64.word }
   
+  fun chomp () =
+    let
+      open TextIO
+    in
+      case inputLine stdIn
+      of SOME "\n" => chomp ()
+       | SOME a => a
+       | NONE => raise Fail "unexpected EOF from server"
+    end
+  
   fun guess prog =
     let
       open TextIO
     in
       print ("GUESS:"^(BV.show prog)^"\n") ;
-      case inputLine stdIn
-      of SOME "RIGHT\n" => RIGHT
-       | SOME "WRONG\n" =>
+      case chomp ()
+      of "RIGHT\n" => RIGHT
+       | "WRONG\n" =>
            let
              val inp = valOf $ scanStream (Word64.scan StringCvt.HEX) stdIn
              val exp = valOf $ scanStream (Word64.scan StringCvt.HEX) stdIn
@@ -27,7 +37,7 @@ struct
            in
              WRONG {input = inp, exp = exp, ours = ours}
            end
-       | _ => raise Fail "driver shell returned invalid result for guess"
+       | s => raise Fail ("driver shell returned invalid result for guess: "^s)
     end
   
   fun eval args =
@@ -36,8 +46,8 @@ struct
       in
         print ("EVAL:"^(Int.toString (length args)) ^ "\n");
         foldl (fn (n, _) => print ((Word64.fmt StringCvt.HEX n) ^ "\n")) () args;
-        case inputLine stdIn
-        of SOME "OKAY\n" =>
+        case chomp ()
+        of "OKAY\n" =>
              rev $ foldl (fn (_, l) => 
                       (valOf $ scanStream (Word64.scan StringCvt.HEX) stdIn) :: l)
                    [] args
