@@ -29,7 +29,7 @@ struct
 
   (* doubleSize initially appears linear, if you only look at the else
      clause, but it's actually a linear function -- the input is consumed. *)
-  fun doubleSize (s, a) = if (numWords s) < (Array.length a) then (2*s, a)
+  fun doubleSize (s, a) = if (numWords (2*s)) <= (Array.length a) then (2*s, a)
     else let
       val newSize = 2*s
       val newArr = Array.array (numWords newSize, 0w0)
