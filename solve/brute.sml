@@ -97,7 +97,12 @@ struct
             else add_op_unless_id Plus
         | maybe_add_op x =
             if eq e1 e2 then NONE (* xor e e = 0, or e e = e, and e e = e *)
-            else add_op_unless_id x
+            (* bitwise binops are distributive across unary binops, e.g.
+             * xor(not x, not y) = not(xor(x,y)), and the latter is 1 nobe smaller *)
+            else case (e1,e2) of (Unop(o1,_), Unop(o2,_)) =>
+                                      if o1 = o2 then NONE
+                                      else add_op_unless_id x
+                               | _ => add_op_unless_id x
     in
       List.mapPartial maybe_add_op $ List.mapPartial allowed ops
     end
@@ -192,7 +197,9 @@ struct
                     List.map (fn (x,y,z) =>
                                 (smaller_exprs x, smaller_exprs y, smaller_exprs z))
                              (partition3 $ size-1)
-                fun nonconstant_ifz (e0 : expr, e1 : expr, e2 : expr) =
+                fun nonconstant_ifz (Binop(Plus,_,One), _, _) = false
+                  | nonconstant_ifz (Binop(Plus,One,_), _, _) = false
+                  | nonconstant_ifz (e0 : expr, e1 : expr, e2 : expr) =
                       (not $ constexpr e0) andalso (not $ eq e1 e2) andalso
                       (not (e1 = Zero andalso eq e0 e2)) (* if e=0 then 0 else e *)
               in
