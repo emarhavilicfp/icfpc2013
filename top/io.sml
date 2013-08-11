@@ -8,7 +8,8 @@ end
 
 structure ServerIO : SERVER_IO = 
 struct
-  open Haskell
+  infixr 0 $
+  fun f $ x = f x
 
   datatype result = RIGHT | WRONG of {input: Word64.word, exp: Word64.word, ours: Word64.word }
   

@@ -1,7 +1,8 @@
 structure BV_Test =
 struct
   open BVP
-  open Haskell
+  infixr 0 $
+  fun f $ x = f x
 
   fun test () = let
     (* tests AST -> str -> AST is a fixpoint *)

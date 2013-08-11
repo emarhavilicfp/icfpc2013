@@ -1,8 +1,9 @@
 (* brute force solver *)
 structure Brute =
 struct
-  open Haskell;
   open BV;
+  infixr 0 $
+  fun f $ x = f x
 
   exception Impossible
 

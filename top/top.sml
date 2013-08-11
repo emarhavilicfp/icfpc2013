@@ -19,7 +19,8 @@ structure Top :> TOP =
 struct
   structure G = GetOpt  (* from $/smlnj-lib/Util/getopt-sig.sml *)
   open Assert
-  open Haskell
+  infixr 0 $
+  fun f $ x = f x
 
   exception EXIT
 

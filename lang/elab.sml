@@ -5,7 +5,8 @@ end
 
 structure Elab : ELAB =
 struct
-  open Haskell
+  infixr 0 $
+  fun f $ x = f x
 
   val nextIndex = ref 0
 

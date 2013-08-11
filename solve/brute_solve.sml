@@ -1,6 +1,7 @@
 structure BruteSolve =
 struct
-  open Haskell
+  infixr 0 $
+  fun f $ x = f x
   
   val log = Flags.log
   

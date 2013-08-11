@@ -73,7 +73,8 @@ end
 structure EvalTest =
 struct
   open Eval;
-  open Haskell;
+  infixr 0 $
+  fun f $ x = f x
 
   fun eval_str msg str input expected =
     let
