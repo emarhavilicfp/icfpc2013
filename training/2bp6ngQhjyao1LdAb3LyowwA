@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_9629) (if0 (plus (xor (not x_9629) 1) x_9629) 0 1))","operators":["if0","not","plus","xor"],"size":10,"id":"2bp6ngQhjyao1LdAb3LyowwA"}

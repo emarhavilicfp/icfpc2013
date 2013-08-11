@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_33350) (fold (and (plus x_33350 (not (not x_33350))) x_33350) x_33350 (lambda (x_33351 x_33352) (not (or x_33351 x_33352)))))","operators":["and","fold","not","or","plus"],"size":15,"id":"x7A9m7lgyvBoAET84UhkF7lh"}

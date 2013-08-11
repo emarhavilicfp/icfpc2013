@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_58948) (fold (shl1 1) (xor (shr16 x_58948) (and (shr1 (if0 (or (shr16 x_58948) (and x_58948 1)) 1 x_58948)) 0)) (lambda (x_58949 x_58950) (shl1 (or x_58950 x_58949)))))","operators":["and","fold","if0","or","shl1","shr1","shr16","xor"],"size":24,"id":"rkbppwcjWD7go6YR6mr8FSFX"}

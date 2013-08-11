@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_27160) (or (plus (if0 (xor (shl1 0) (shl1 (shr16 (and (or 1 (shr4 (shr16 1))) x_27160)))) 1 1) 1) x_27160))","operators":["and","if0","or","plus","shl1","shr16","shr4","xor"],"size":20,"id":"F8Z7gOAiCLD0gwHm8OapdDlp"}

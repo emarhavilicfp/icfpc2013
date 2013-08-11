@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_65431) (fold x_65431 (shr1 (or x_65431 (shr16 x_65431))) (lambda (x_65432 x_65433) (if0 (not (shr16 (shr4 (shr16 (plus (plus (and (shr1 (plus x_65433 x_65432)) x_65432) x_65433) x_65432))))) x_65433 x_65433))))","operators":["and","fold","if0","not","or","plus","shr1","shr16","shr4"],"size":26,"id":"tP0lmTe3CiBiyFqFuNBPTG0L"}

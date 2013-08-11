@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_7985) (if0 (shl1 (and (not x_7985) 1)) 1 0))","operators":["and","if0","not","shl1"],"size":9,"id":"sYADPrsLMeYteQTYKw9Xwyij"}

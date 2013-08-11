@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_7029) (xor (shr4 (shr16 (or 1 x_7029))) x_7029))","operators":["or","shr16","shr4","xor"],"size":8,"id":"MA2w8BLOvBwjDo3X0HP2dVMh"}

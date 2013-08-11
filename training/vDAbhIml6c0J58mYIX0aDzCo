@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_4169) (fold x_4169 0 (lambda (x_4169 x_4170) (shl1 (shr1 (shl1 x_4169))))))","operators":["shl1","shr1","tfold"],"size":9,"id":"vDAbhIml6c0J58mYIX0aDzCo"}

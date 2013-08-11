@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_46157) (fold (plus (if0 (plus (not (xor x_46157 1)) x_46157) x_46157 0) x_46157) x_46157 (lambda (x_46158 x_46159) (not (plus x_46159 x_46158)))))","operators":["fold","if0","not","plus","xor"],"size":19,"id":"NKBzSWEmwyW44hDAQJxq1N9h"}

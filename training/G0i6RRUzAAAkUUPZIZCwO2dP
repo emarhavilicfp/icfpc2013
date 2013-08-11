@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_6146) (or (shr4 (shr16 (not 1))) x_6146))","operators":["not","or","shr16","shr4"],"size":7,"id":"G0i6RRUzAAAkUUPZIZCwO2dP"}

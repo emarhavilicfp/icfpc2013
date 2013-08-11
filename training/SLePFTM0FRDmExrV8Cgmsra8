@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_7359) (plus (plus x_7359 (xor x_7359 x_7359)) 1))","operators":["plus","xor"],"size":8,"id":"SLePFTM0FRDmExrV8Cgmsra8"}

@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_5123) (shl1 (plus (shr16 x_5123) x_5123)))","operators":["plus","shl1","shr16"],"size":6,"id":"FMWUFk2x9Kgm8M8ofGWL0tjA"}

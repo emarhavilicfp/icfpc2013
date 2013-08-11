@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_8473) (if0 (xor x_8473 (or x_8473 1)) x_8473 1))","operators":["if0","or","xor"],"size":9,"id":"swcAfakniVH07BnCXa6cVuD0"}

@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_2921) (fold x_2921 0 (lambda (x_2921 x_2922) (or 1 x_2921))))","operators":["or","tfold"],"size":8,"id":"RdAwVQZIwclCGNfQDGAyeJe0"}

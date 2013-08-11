@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_7098) (plus (or (and x_7098 x_7098) x_7098) x_7098))","operators":["and","or","plus"],"size":8,"id":"vBbFC8WwIqikhUCtxBTemPvo"}
