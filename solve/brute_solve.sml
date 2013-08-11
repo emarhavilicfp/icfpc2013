@@ -45,9 +45,12 @@ struct
      have far too many functions to evaluate all of them right now.  *)
   fun quickn n = List.tabulate (n, fn _ => random ())
 
-  datatype narrowed = Separated of BV.program list 
-                    | Inseparable of BV.program list
+  (* The bool is true if we could narrow it down ("Seperable"). *)
+  type narrowed = (bool * BV.program list)
+
+                         (* Counterexample from the server. (input,output). *)
   datatype narrowinput = KNOWN of Word64.word * Word64.word
+                         (* We want to ask the server about these. *)
                        | UNKNOWN of Word64.word list
 
   (* Filter down a bunch of functions into those that are consistent
@@ -57,32 +60,31 @@ struct
      signify whether it was only vacuously consistent with the target
      function (because `inputs` is `nil`).
    *)
-  fun narrow choices input =
+  fun narrow choices (input: narrowinput) : narrowed =
     let
       val pairs = 
         case input
         of KNOWN ks => [ks]
          | UNKNOWN [] => []
          | UNKNOWN inps => ListPair.zip (inps, ServerIO.eval inps)
-      val possible =
+      val possible as (seperable, newchoices) =
           case pairs
-           of nil => Inseparable choices
+           of [] => (false, choices)
             | _ =>
-              Separated $
+              (true,
                 List.filter
                   (fn prog =>
                     List.all (fn (q, a) => (Eval.eval prog q) = a) pairs)
-                  choices
+                  choices)
 
-      val len = case possible
-                 of Separated ps => length ps
-                  | Inseparable ps => length ps
+      val oldlen = length choices
+      val newlen = length newchoices
       val possible' =
-          case (possible, length choices = len)
-          of (Separated ps, true) => Inseparable ps
+          case (possible, oldlen = newlen)
+          of ((true, ps), true) => (false, ps)
            | (ps, _) => ps
-      val _ = log ("Narrowed " ^ (Int.toString $ length choices) ^
-                   " to " ^ (Int.toString $ len) ^ "\n")
+      val _ = log ("Narrowed " ^ (Int.toString oldlen) ^
+                   " to " ^ (Int.toString newlen) ^ "\n")
     in
       possible'
     end
@@ -90,11 +92,11 @@ struct
   fun solve a =
     let
       val _ = mt := (MT.init32 (!Flags.seed))
-      fun rep (Separated []) = raise Fail "Uhm..."
-        | rep (Inseparable []) = raise Fail "Double uhm..."
+      fun rep (true, []) = raise Fail "Uhm..."
+        | rep (false, []) = raise Fail "Double uhm..."
 
-        | rep (Separated (p :: nil)) = ServerIO.guess p
-        | rep (Separated ps) =
+        | rep (true,(p :: nil)) = ServerIO.guess p
+        | rep (true, ps) =
           let
             val _ = log ("solve: rep: creating inputs for "^(Int.toString $ length ps)^" programs...\n");
             val inputs =
@@ -107,8 +109,8 @@ struct
             rep (narrow ps (UNKNOWN inputs))
           end
 
-        | rep (Inseparable (p :: nil)) = ServerIO.guess p
-        | rep (Inseparable ps) =
+        | rep (false, (p :: nil)) = ServerIO.guess p
+        | rep (false, ps) =
           let
             val result = ServerIO.guess (List.hd ps)
           in
@@ -120,7 +122,7 @@ struct
                rep (narrow ps $ KNOWN (inp, exp))
           end
       val _ = log ("solve: generating...\n")
-      val res = rep (Separated (Brute.generate a))
+      val res = rep (true, (Brute.generate a))
       val _ = Flags.seed := MT.rand32 (!mt)
     in
       case res
