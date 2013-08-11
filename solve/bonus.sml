@@ -55,10 +55,10 @@ struct
         List.filter
           (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) f'map)
           ps
+      (*
       val _ = log ("bonus: match_choice: matched "^(Sdl ps)^" programs and "^(Sdl values)^" test cases to "^(Sdl fs)^" fs and "^(Sdl f's)^" f's\n")
       val _ = log ("   g: "^(BV.show g)^"\n")
       val _ = log ("   h: "^(BV.show h)^"\n")
-      (*
       val _ = List.map (fn f => log ("  f: "^(BV.show f)^"\n")) fs
       val _ = List.map (fn f => log (" f': "^(BV.show f)^"\n")) f's
       *)
@@ -162,8 +162,10 @@ struct
             if BitVec.orFills(hwec,gwec) then
               let val hsize = size hprog - 1 (* likewise outer lambda *)
               in
+                (*
                 log ("bonus: match made! (sizes " ^ Int.toString gsize ^ " " ^
                      Int.toString hsize ^ ")\n");
+                *)
                 ((gprog,hprog),(gsize,hsize))::candidates
               end
             else candidates
