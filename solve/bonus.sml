@@ -145,7 +145,7 @@ struct
         let
           val gsize = size gprog - 1 (* strip g's outer lambda *)
           val gsize' = Int.max (minsize, gsize) (* Smaller ones get generated too. *)
-          val max_h_size = other_size gsize'
+          val max_h_size = Int.min (gsize', other_size gsize') (* cf WLOG *)
           val _ = Assert.assert "hsize too big" $ max_h_size <= maxsize
           val _ = Assert.assert "hsize too small" $ max_h_size >= minsize
           fun does_h_match ((hprog,hwec), candidates) =
