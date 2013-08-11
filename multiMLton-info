@@ -1,0 +1,230 @@
+structure Main=
+struct
+  open MLton.Pacml
+  fun doit () =
+  let
+    val ch1 = channel ()
+    val ch2 = channel ()
+  in
+    run
+    (fn () =>
+    let
+      val _ = spawnHost (fn () => send (ch2, ()))
+      val e = aWrap (aRecvEvt(ch1), fn () => print "recv on ch1 completed")
+      val e = aTrans (e)
+      val e = wrap (e, fn () => (recv (ch2); print "recv on ch2 completed"))
+      val _ = sSync (e)
+      val _ = spawnHost (fn () => send (ch1, ()))
+    in
+      ()
+    end)
+  end
+end
+
+val _ = Main.doit ()
+
+(* spawnHost is used for spawning your standard thread (spawn is aliased to this as well)
+ * spawnParasite is used for spawning a short-lived lightweight "threadlet" that is scheduled by the
+ * MultiMLton runtime.
+ *
+ * sevt is a synchronous event, aevt is async.  Async events separate post-creation actions from
+ * post-consumption actions; thus, calling sSync will block until it gets a matching recv, while
+ * calling aSync will return immediately (typically with unit).  If you want to use the consumed
+ * result from an aevt (say, from aRecvEvt), use aWrap to pass a continuation. If you want to force
+ * a sync on an aevt, you'll need to create an sevt inside a continuation passed to aWrap; simply
+ * calling sSync on the sevt created by aTrans will still immediately return (it would be syncing on
+ * the event being queued (which has definitely already happened), not consumed (which may not have
+ * happened yet)).
+ * 
+ * From the whitepaper:
+ *   While asynchronous events do not block, they still enforce ordering constraints that reflect the
+ *   order in which they were synchronized.
+ *
+ * To run anything that uses threads, events, channels, etc., call `run`.
+ *)
+
+(* open MLton.Pacml *)
+signature MLTON_PACML=
+sig
+  include THREAD
+  include EVENT
+  include CHANNEL
+  include MAIN
+  include TIME_OUT_EXTRA
+  structure MutexLock : MUTEX_LOCK
+  structure SyncVar : SYNC_VAR
+  structure Mailbox : MAILBOX
+  structure Multicast : MULTICAST
+  structure SimpleRPC : SIMPLE_RPC
+  structure NonBlocking : NON_BLOCKING_EXTRA
+end
+
+signature THREAD =
+sig
+  include THREAD_ID
+  val getTid : unit -> thread_id
+  val exit : unit -> unit
+  val yield : unit -> unit
+  val spawnHost : (unit -> unit) -> thread_id
+  val spawnParasite : (unit -> unit) -> unit
+  val spawn : (unit -> unit) -> thread_id
+  val spawnOnProc : ((unit -> unit) * int) -> thread_id
+end
+
+signature THREAD_ID =
+sig
+  type thread_id
+  type thread_type
+  type parasite_state = RepTypes.parasite_state
+
+  val sameTid    : (thread_id * thread_id) -> bool
+  val compareTid : (thread_id * thread_id) -> order
+  val hashTid    : thread_id -> word
+
+  val tidToString : thread_id -> string
+  val tidToInt : thread_id -> int
+
+  val getCurThreadId : unit -> thread_id
+  val tidMsg : unit -> string
+  val tidNum : unit -> int
+
+  val getProcId : thread_id -> int
+  val sameProcessor : thread_id * thread_id -> bool
+end
+
+
+signature EVENT =
+sig
+  type 'a sevt = 'a RepTypes.sevt
+  type ('a,'b) aevt = ('a, 'b) RepTypes.aevt
+
+  val never : 'a sevt
+  val alwaysEvt : 'a -> 'a sevt
+
+  val wrap  : ('a sevt * ('a -> 'b)) -> 'b sevt
+  val sWrap : (('a,'b) aevt * ('a -> 'c)) -> ('c,'b) aevt
+  val aWrap : (('a,'b) aevt * ('b -> 'c)) -> ('a,'c) aevt
+
+  val guard  : (unit -> 'a sevt) -> 'a sevt
+  val aGuard : (unit -> ('a,'b) aevt) -> ('a,'b) aevt
+
+  val choose : 'a sevt list -> 'a sevt
+  val select : 'a sevt list -> 'a
+
+  val aSync : ('a,'b) aevt -> 'a
+  val sSync : 'a sevt -> 'a
+
+  val sTrans : 'a sevt -> (unit, 'a) aevt
+  val aTrans : ('a, 'b) aevt -> 'a sevt
+end
+
+signature CHANNEL =
+sig
+  type 'a chan
+
+  val channel: unit -> 'a chan
+  val sameChannel: 'a chan * 'a chan -> bool
+
+  val aSend : ('a chan * 'a) -> unit
+  val send : ('a chan * 'a) -> unit
+  val recv : 'a chan -> 'a
+
+  val sendEvt  : ('a chan * 'a) -> unit Event.sevt
+  val recvEvt  : 'a chan -> 'a Event.sevt
+
+  val sendPoll : ('a chan * 'a) -> bool
+  val recvPoll : 'a chan -> 'a option
+
+  val aSendEvt : ('a chan * 'a) -> (unit, unit) Event.aevt
+  val aRecvEvt  : 'a chan -> (unit, 'a) Event.aevt
+end
+
+signature MAIN =
+sig
+  val run : (unit -> unit) -> OS.Process.status
+  val shutdown : OS.Process.status -> 'a
+end
+
+signature TIME_OUT_EXTRA =
+sig
+  include TIME_OUT
+
+  val reset : unit -> unit
+  val preempt : unit -> Time.time option option
+  val preemptTime : unit -> unit
+end
+
+signature TIME_OUT =
+sig
+  val timeOutEvt : Time.time -> unit Event.sevt
+  val atTimeEvt  : Time.time -> unit Event.sevt
+end
+
+signature MUTEX_LOCK =
+sig
+  type mutexlock
+
+  val initLock : unit -> mutexlock
+  val getLock : mutexlock -> unit
+  val releaseLock : mutexlock -> unit
+  val fetchAndAdd: int ref * int -> int
+end
+
+signature SYNC_VAR =
+sig
+  type 'a ivar  (* I-structure variable *)
+  type 'a mvar  (* M-structure variable *)
+
+  exception Put (* raised on put operations to full cells *)
+
+  val iVar     : unit -> 'a ivar
+  val iPut     : ('a ivar * 'a) -> unit
+  val iGet     : 'a ivar -> 'a
+  val iGetEvt  : 'a ivar -> 'a Event.sevt
+  val iGetPoll : 'a ivar -> 'a option
+  val sameIVar : ('a ivar * 'a ivar) -> bool
+
+  val mVar      : unit -> 'a mvar
+  val mVarInit  : 'a -> 'a mvar
+  val mPut      : ('a mvar * 'a) -> unit
+  val mTake     : 'a mvar -> 'a
+  val mTakeEvt  : 'a mvar -> 'a Event.sevt
+  val mTakePoll : 'a mvar -> 'a option
+  val mGet      : 'a mvar -> 'a
+  val mGetEvt   : 'a mvar -> 'a Event.sevt
+  val mGetPoll  : 'a mvar -> 'a option
+  val mSwap     : ('a mvar * 'a) -> 'a
+  val mSwapEvt  : ('a mvar * 'a) -> 'a Event.sevt
+  val sameMVar  : ('a mvar * 'a mvar) -> bool
+end
+
+signature MAILBOX =
+sig
+  type 'a mbox
+
+  val mailbox     : unit -> 'a mbox
+  val sameMailbox : ('a mbox * 'a mbox) -> bool
+
+  val send     : ('a mbox * 'a) -> unit
+  val recv     : 'a mbox -> 'a
+  val recvEvt  : 'a mbox -> 'a Event.sevt
+  val recvPoll : 'a mbox -> 'a option
+end
+
+signature NON_BLOCKING =
+sig
+  type proc
+
+  (* creates an abstract processor *)
+  val createProcessor : unit -> proc option
+
+  val executeOn : proc -> (unit -> 'a) -> 'a
+  val execute : (unit -> 'a) -> 'a
+  val spawnOn : proc -> (unit -> unit) -> unit
+end
+
+signature NON_BLOCKING_EXTRA =
+sig
+    include NON_BLOCKING
+    val mkNBThread : unit -> unit
+end
