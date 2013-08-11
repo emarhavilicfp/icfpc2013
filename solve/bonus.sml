@@ -145,7 +145,7 @@ struct
       val _ = log ("bonus: generating candidate f conditions\n")
       val fs  = List.map (fn x => generate_and1   x) size_categories
       val num_fs = foldr (fn (l,x) => List.length l + x) 0 fs
-      val _ = log ("bonus: generated "^(Sl num_fs)^" f candidate programs\n")
+      val _ = log ("bonus: generated "^(Sd num_fs)^" f candidate programs\n")
 
       (**** Find all pairs of g/h candidates. ****)
       val _ = log ("bonus: building g/h pairs\n")
@@ -196,7 +196,8 @@ struct
         let
           val _ = Assert.assert "xg xh aren't the same" (xg = xh)
           val _ =
-            if length whole_progs > 250000
+            if length whole_progs > 1000000
+               orelse (length whole_progs > 10000 andalso length candidate_pairs > 500000)
             then raise Reduce whole_progs
             else ()
           val max_f_size = (* As in find_pairs, smaller ones are generated. *)
