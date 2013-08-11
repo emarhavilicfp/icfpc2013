@@ -24,7 +24,7 @@ struct
 
   exception EXIT
 
-  val solvers = [BruteSolve.solver, Solver.TotalNobe]
+  val solvers = [BruteSolve.solver, Solver.TotalNobe, Bonus.solver]
   val solver = case solvers
                of s :: _ => ref s
                 | _ => raise Fail "no solvers"
@@ -72,7 +72,7 @@ struct
                   desc=G.NoArg (fn () => ops := BV.O_Fold :: !ops),
                   help=""},
                  {short = "", long = ["has-bonus-op"],
-                  desc=G.NoArg (fn () => ops := BV.O_Bonus :: !ops),
+                  desc=G.NoArg (fn () => (ops := BV.O_Bonus :: !ops; solver := Bonus.solver)),
                   help=""},
                  {short = "l", long = ["length"],
                   desc=G.ReqArg (fn s => len := (valOf $ Int.fromString s), "length"),
