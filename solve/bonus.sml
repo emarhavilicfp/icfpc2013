@@ -2,14 +2,12 @@
 structure Bonus =
 struct
   open BV;
-  infixr 0 $
-  fun f $ x = f x
 
   val log = Flags.log
   val Sd = Int.toString
-  fun Sdl (a : 'a list) = Int.toString $ length a
+  fun Sdl (a : 'a list) = Int.toString (length a)
 
-  fun mapi f l = map f $ ListPair.zip (List.tabulate (length l, fn x => x), l);
+  fun mapi f l = map f (ListPair.zip (List.tabulate (length l, fn x => x), l));
 
   (* match_choice attempts to match a program from a pregenerated list to a
      list of correct outputs.  In particular, it returns a list of fs such that:
@@ -79,13 +77,13 @@ struct
     | solve minsize (spec: Solver.spec) : unit =
     let
       val ops = #ops spec
-      val _ = Assert.assert "not a bonus prob" $ List.exists (fn x => x = O_Bonus) ops
-      val _ = Assert.assert "minsize way too big" $ minsize < 10
+      val _ = Assert.assert "not a bonus prob" (List.exists (fn x => x = O_Bonus) ops)
+      val _ = Assert.assert "minsize way too big" (minsize < 10)
 
       (**** Reason about sizes of f, g, and h. ****)
 
       val fgh_size = #size spec - 4 (* lambda + ifz + and + 1 *)
-      val _ = Assert.assert "size too small" $ fgh_size >= 3
+      val _ = Assert.assert "size too small" (fgh_size >= 3)
       (* ???? should never be lower *)
       val minsize =
         let val x = fgh_size div 3 in if x < minsize then x else minsize end
@@ -100,7 +98,7 @@ struct
        * generate all the smaller programs too. This is not inside the "inner
        * loop"; the inner loop just iterates over server counterexamples.
        * We do however save the biggest progs to not regen them later. *)
-      val _ = log ("bonus: generating for size "^(Sd $ 1+maxsize)^"\n")
+      val _ = log ("bonus: generating for size "^(Sd (1+maxsize)^"\n"))
       val biggest_progs = Brute.generate {size=1+maxsize,ops=ops}
       val _ = log ("bonus: generating queries\n")
       val inputs = BruteSolve.get_inputs biggest_progs
@@ -115,7 +113,7 @@ struct
             (if Eval.eval prog input <> output then wector else
                BitVec.set (wector, index),
              index+1)
-          val initial_wector = BitVec.new $ List.length pairs
+          val initial_wector = BitVec.new (List.length pairs)
           val (final_wector,_) = foldr set_wector_bit (initial_wector, 0) pairs
         in
           (prog, final_wector)
@@ -155,8 +153,8 @@ struct
           val gsize = size gprog - 1 (* strip g's outer lambda *)
           val gsize' = Int.max (minsize, gsize) (* Smaller ones get generated too. *)
           val max_h_size = Int.min (gsize', other_size gsize') (* cf WLOG *)
-          val _ = Assert.assert "hsize too big" $ max_h_size <= maxsize
-          val _ = Assert.assert "hsize too small" $ max_h_size >= minsize
+          val _ = Assert.assert "hsize too big" (max_h_size <= maxsize)
+          val _ = Assert.assert "hsize too small" (max_h_size >= minsize)
           fun does_h_match ((hprog,hwec), candidates) =
             if BitVec.orFills(hwec,gwec) then
               let val hsize = size hprog - 1 (* likewise outer lambda *)
@@ -171,11 +169,11 @@ struct
         in
           (* Pick hs from the slot in the list that has programs no bigger
            * than the max allowable size for h given g's size. *)
-          foldr does_h_match candidates $ List.nth (where_to_look, max_h_size-minsize)
+          foldr does_h_match candidates (List.nth (where_to_look, max_h_size-minsize))
         end
       (* The last slot has programs of all sizes.
        * Without loss of general fantasy, 'g' is not smaller than 'h'. *)
-      val candidate_pairs = foldr find_pairs [] $ List.last ghs
+      val candidate_pairs = foldr find_pairs [] (List.last ghs)
       val _ = log ("bonus: found "^(Sdl candidate_pairs)^" potential pairs\n")
 
       (**** Find matching segregators f for each g/h candidate pair. ****)
@@ -184,11 +182,11 @@ struct
       fun find_segregators ((gh as (Lambda (xg,eg), Lambda (xh,eh)),(gsize,hsize)),
                             whole_progs) =
         let
-          val _ = Assert.assert "xg xh aren't the same" $ xg = xh
+          val _ = Assert.assert "xg xh aren't the same" (xg = xh)
           val max_f_size = (* As in find_pairs, smaller ones are generated. *)
             segr_size (Int.max (minsize, gsize)) (Int.max (minsize, hsize))
           val (matching_fs_gh, matching_fs_hg) =
-                match_choice pairs gh $ List.nth (fs, max_f_size-minsize)
+                match_choice pairs gh (List.nth (fs, max_f_size-minsize))
           (* Function to glue all 3 together, with 'g' in the true branch. *)
           fun make_fgh (Lambda(xf,ef)) =
             (Assert.assert "xf/xg/xh" (xf = xg); Lambda(xf, Ifz(ef,eg,eh)))
@@ -248,10 +246,10 @@ struct
         "(lambda (x_3) (if0 (and (if0 (plus (shr16 x_3) x_3) 0 (or (shr4 x_3) 0)) 1) (shr16 (if0 (shr16 (shr1 (xor (shr1 (not 0)) (xor x_3 0)))) 0 x_3)) (plus (not x_3) (if0 (xor x_3 1) (not 1) 0))))",
         "(lambda (x_15) (if0 (and (shr4 (shr4 (shr4 (plus (if0 (shr1 (and x_15 (shl1 x_15))) 0 x_15) 0)))) 1) (or (shr1 (if0 (and (shr1 (shl1 (shr1 x_15))) x_15) 0 x_15)) x_15) (or (plus (if0 (xor (shr16 0) (xor x_15 1)) 0 1) 1) x_15)))"]
 
-      val f = (fn (f,g,h) => Assert.say_yellow $
-          "|f| = " ^ Sd (size_expr f) ^
+      val f = (fn (f,g,h) => Assert.say_yellow
+         ("|f| = " ^ Sd (size_expr f) ^
         "; |g| = " ^ Sd (size_expr g) ^
-        "; |h| = " ^ Sd (size_expr h))
+        "; |h| = " ^ Sd (size_expr h)))
     in
       Assert.say_yellow "bonus category 42:";
       List.map f progs;
