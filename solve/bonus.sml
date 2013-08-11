@@ -57,8 +57,10 @@ struct
       val _ = log ("bonus: match_choice: matched "^(Sdl ps)^" programs and "^(Sdl values)^" test cases to "^(Sdl fs)^" fs and "^(Sdl f's)^" f's\n")
       val _ = log ("   g: "^(BV.show g)^"\n")
       val _ = log ("   h: "^(BV.show h)^"\n")
+      (*
       val _ = List.map (fn f => log ("  f: "^(BV.show f)^"\n")) fs
       val _ = List.map (fn f => log (" f': "^(BV.show f)^"\n")) f's
+      *)
     in
       (fs, f's)
     end
