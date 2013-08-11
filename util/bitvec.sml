@@ -2,9 +2,8 @@ signature BITVEC =
 sig
   type t
   val new : int -> t
-  val set : t * int -> unit
+  val set : t * int -> t
   val orFills : (t * t) -> bool
-  val doubleSize : t -> t
 end
 
 structure BitVec : BITVEC =
@@ -28,17 +27,28 @@ struct
   (* Start with double size to allow for quick resizes. *)
   fun new size = (size, Array.array ((numWords size) * 2, 0w0))
 
-  fun set ((_, a), i) =
+  (* doubleSize initially appears linear, if you only look at the else
+     clause, but it's actually a linear function -- the input is consumed. *)
+  fun doubleSize (s, a) = if (numWords s) < (Array.length a) then (2*s, a)
+    else let
+      val newSize = 2*s
+      val newArr = Array.array (numWords newSize, 0w0)
+      val _ = Array.copy {src=a, dst=newArr, di=0}
+    in
+      (newSize, newArr)
+    end
+  
+  fun set (arr as (siz, a), i) =
+    if i >= siz then set (doubleSize arr, i) else
     let
       val newVal = Word.orb(Array.sub (a, wordOffset i), Word.<<(0w1, Word.fromInt $ bitOffset i))
     in
-      Array.update (a, wordOffset i, newVal)
+      Array.update (a, wordOffset i, newVal); arr
     end
 
   val neg1 = Word.notb 0w0
 
   exception Size
-  exception NOPE
   (* Compare two bitvecs, returning true iff bv1 | bv2 == ~0. *)
   fun orFills ((s1, a1), (s2, a2)) =
     let
@@ -68,15 +78,5 @@ struct
       fulls andalso lasts
     end
 
-  (* doubleSize initially appears linear, if you only look at the else
-     clause, but it's actually a linear function -- the input is consumed. *)
-  fun doubleSize (s, a) = if (numWords s) < (Array.length a) then (2*s, a)
-    else let
-      val newSize = 2*s
-      val newArr = Array.array (numWords newSize, 0w0)
-      val _ = Array.copy {src=a, dst=newArr, di=0}
-    in
-      (newSize, newArr)
-    end
 
 end
