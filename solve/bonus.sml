@@ -54,15 +54,17 @@ struct
                     : (Word64.word * Word64.word) list
       (* Each g/h candidate will be paired with a bit wector that expresses how
        * much it agrees with the server's true function. *)
-      fun give_wector prog =
+      fun give_wector (prog: BV.program) : (BV.program * BitVec.t) =
         let
-          fun set_wector_bit ((input,output),(wector,index)) =
+          fun set_wector_bit ((input,output),(wector:BitVec.t,index:int)) =
             (* Set the bit if the candidate agrees with the server on this pair. *)
             (if Eval.eval prog input <> output then wector else
                BitVec.set (wector, index),
              index+1)
+          val initial_wector = BitVec.new $ List.length pairs
+          val (final_wector,_) = foldr set_wector_bit (initial_wector, 0) pairs
         in
-          (prog, foldr set_wector_bit (BitVec.new $ List.length pairs, 0) pairs)
+          (prog, final_wector)
         end
 
       (**** Generate candidates. ****)
