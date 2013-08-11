@@ -90,8 +90,10 @@ struct
 
       (* Note that we just use the max size because Brute.generate will
        * generate all the smaller programs too. This is not inside the "inner
-       * loop"; the inner loop just iterates over server counterexamples. *)
-      val inputs = BruteSolve.get_inputs $ Brute.generate {size=1+maxsize,ops=ops}
+       * loop"; the inner loop just iterates over server counterexamples.
+       * We do however save the biggest progs to not regen them later. *)
+      val biggest_progs = Brute.generate {size=1+maxsize,ops=ops}
+      val inputs = BruteSolve.get_inputs biggest_progs
       val pairs = ListPair.zip (inputs, ServerIO.eval inputs)
                     : (Word64.word * Word64.word) list
       (* Each g/h candidate will be paired with a bit wector that expresses how
@@ -114,11 +116,19 @@ struct
       (* We need to keep them in different size categories to optmz to avoid
        * trying g/h pairs with both of the maxsize, which would be too big.
        * This list is, for minsize=5 and maxsize=8, is [5,6,7,8]. *)
-      val size_cats = List.tabulate (maxsize-minsize+1, fn x => minsize+x)
+      val size_categories = List.tabulate (maxsize-minsize+1, fn x => minsize+x)
+      (* Reuse the already-generated biggest programs if we can. *)
+      fun generate_wector size = List.map give_wector
+        (if size = maxsize then biggest_progs
+         else Brute.generate {size=1+size,ops=ops})
+      fun generate_and1 size =
+        if size = maxsize then
+          (* welp, I don't want to change the Brute.generate structure now, so. *)
+          List.map (fn Lambda(x,e) => Lambda(x,Binop(And,e,One))) biggest_progs
+        else Brute.generate {size=1+size,ops=ops}
       (* Note: 1+size for the enclosing lambda, not part of f/g/h. *)
-      val ghs = List.map (fn x =>
-                  List.map give_wector $ Brute.generate {size=1+x,ops=ops}) size_cats
-      val fs  = List.map (fn x => Brute.generate_and1   {size=1+x,ops=ops}) size_cats
+      val ghs = List.map (fn x => generate_wector x) size_categories
+      val fs  = List.map (fn x => generate_and1   x) size_categories
 
       (**** Find all pairs of g/h candidates. ****)
 
