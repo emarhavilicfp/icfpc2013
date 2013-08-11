@@ -6,6 +6,8 @@ struct
   fun f $ x = f x
   
   val log = Flags.log
+  val Sd = Int.toString
+  fun Sdl (a : 'a list) = Int.toString $ length a
 
   fun mapi f l = map f $ ListPair.zip (List.tabulate (length l, fn x => x), l);
   
@@ -52,13 +54,13 @@ struct
         List.filter
           (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) f'map)
           ps
-      val _ = log ("bonus: match_choice: matched "^(Int.toString $ length ps)^" programs and "^(Int.toString $ length values)^" test cases to "^(Int.toString $ length fs)^" fs and "^(Int.toString $ length f's)^" f's\n")
+      val _ = log ("bonus: match_choice: matched "^(Sdl ps)^" programs and "^(Sdl values)^" test cases to "^(Sdl fs)^" fs and "^(Sdl f's)^" f's\n")
     in
       (fs, f's)
     end
   
   fun try_programs ps =
-    (log ("bonus: try_results: about to send "^(Int.toString $ length ps)^" results up to the server\n");
+    (log ("bonus: try_results: about to send "^(Sdl ps)^" results up to the server\n");
      BruteSolve.server ps;
      true)
       handle BruteSolve.NoSolution =>
@@ -92,7 +94,7 @@ struct
        * generate all the smaller programs too. This is not inside the "inner
        * loop"; the inner loop just iterates over server counterexamples.
        * We do however save the biggest progs to not regen them later. *)
-      val _ = log ("bonus: generating for size "^(Int.toString $ 1+maxsize)^"\n")
+      val _ = log ("bonus: generating for size "^(Sd $ 1+maxsize)^"\n")
       val biggest_progs = Brute.generate {size=1+maxsize,ops=ops}
       val _ = log ("bonus: generating queries\n")
       val inputs = BruteSolve.get_inputs biggest_progs
@@ -152,12 +154,13 @@ struct
         in
           (* Pick hs from the slot in the list that has programs no bigger
            * than the max allowable size for h given g's size. *)
+          log ("bonus: ghs size "^(Sdl ghs)^", asking for max_h_size "^(Sd max_h_size)^" - minsize "^(Sd minsize)^"\n");
           foldr does_h_match candidates $ List.nth (ghs, max_h_size-minsize)
         end
       (* The last slot has programs of all sizes.
        * Without loss of general fantasy, 'g' is not smaller than 'h'. *)
       val candidate_pairs = foldr find_pairs [] $ List.last ghs
-      val _ = log ("bonus: found "^(Int.toString $ length candidate_pairs)^" potential pairs\n")
+      val _ = log ("bonus: found "^(Sdl candidate_pairs)^" potential pairs\n")
 
       (**** Find matching segregators f for each g/h candidate pair. ****)
       val _ = log ("bonus: searching for segregator functions\n")
@@ -186,7 +189,7 @@ struct
     in
       (* Outer loop. Repeat with a laxer minsize if our estimate was too big. *)
       if try_programs candidate_progs then ()
-      else (Flags.log ("Minsize " ^ Int.toString minsize ^ " not min enough.");
+      else (Flags.log ("Minsize " ^ Sd minsize ^ " not min enough.");
             solve (minsize-1) spec)
     end
 
@@ -221,9 +224,9 @@ struct
 
     in
       List.map (fn (f,g,h) => Assert.say_yellow $
-          "|f| = " ^ Int.toString (size_expr f) ^
-        "; |g| = " ^ Int.toString (size_expr g) ^
-        "; |h| = " ^ Int.toString (size_expr h))
+          "|f| = " ^ Sd (size_expr f) ^
+        "; |g| = " ^ Sd (size_expr g) ^
+        "; |h| = " ^ Sd (size_expr h))
         progs;
       true
     end,
