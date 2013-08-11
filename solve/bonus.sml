@@ -138,7 +138,6 @@ struct
         end
 
       (**** Generate candidate programs. ****)
-      val _ = log ("bonus: generating candidate programs\n")
 
       (* We need to keep them in different size categories to optmz to avoid
        * trying g/h pairs with both of the maxsize, which would be too big.
@@ -154,7 +153,11 @@ struct
            List.map (fn Lambda(x,e) => Lambda(x,Binop(And,e,One))) biggest_progs
          else Brute.generate_and1 {size=1+size,ops=ops})
       (* Note: 1+size for the enclosing lambda, not part of f/g/h. *)
+      val _ = log ("bonus: generating candidate g/h pairs\n")
       val ghs = List.map (fn x => generate_wector x) size_categories
+      val num_ghs = foldr (fn (l,x) => List.length l + x) 0 ghs
+      val _ = log ("bonus: generated " ^ Int.toString num_ghs ^ "g/hs\n")
+      val _ = log ("bonus: generating candidate f conditions\n")
       val fs  = List.map (fn x => generate_and1   x) size_categories
 
       (**** Find all pairs of g/h candidates. ****)
