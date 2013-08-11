@@ -274,6 +274,18 @@ struct
            | (NONE, true) => generate_expr_miss ()
       end
 
+  exception BruteHash
+
+  fun uniquify progs =
+    let
+      val hashfn = HashString.hashString o show
+      val table = HashTable.mkTable (hashfn, (fn (x,y) => x = y))
+                                    (List.length progs, BruteHash)
+    in
+      List.map (fn prog => HashTable.insert table (prog,())) progs;
+      List.map #1 $ HashTable.listItemsi table
+    end
+
   fun generate (spec: Solver.spec) : program list =
     let
       val top_x = 0
@@ -303,7 +315,8 @@ struct
             generate_expr table do_fold [top_x] ops (size-1)
           end
     in
-      List.map (fn expr => Lambda (top_x, expr)) exprs
+      uniquify $ List.map (fn expr => Lambda (top_x, expr)) exprs
+
     end
 
 
@@ -321,7 +334,7 @@ struct
         List.map (fn expr => Binop(And,expr,One)) $
           generate_expr table do_fold [top_x] ops (size-1)
     in
-      List.map (fn expr => Lambda (top_x, expr)) exprs
+      uniquify $ List.map (fn expr => Lambda (top_x, expr)) exprs
     end
 
   (* tests *)
