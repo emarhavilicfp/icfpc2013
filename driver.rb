@@ -7,6 +7,7 @@ require 'json'
 require 'optparse'
 
 AUTHKEY = "0132X9AqfwFADPNaFAspP3eFjUdCx0fVpxWS6pHd"
+TRAINDIR = "training"
 
 def main
   @options = {}
@@ -43,9 +44,14 @@ def main
 
   example = nil
   if @options[:pid]
-    myproblems = JSON.parse(File.open('myproblems').readlines.join(''))
-    example = myproblems.select{|x| x['id'] == @options[:pid]}[0]
-    mode = "reality"
+    if File.file?("#{TRAINDIR}/#{@options[:pid]}")
+      example = JSON.parse(File.open("#{TRAINDIR}/#{@options[:pid]}").readlines.join(''))
+      mode = "training"
+    else
+      myproblems = JSON.parse(File.open('myproblems').readlines.join(''))
+      example = myproblems.select{|x| x['id'] == @options[:pid]}[0]
+      mode = "reality"
+    end
   else
     trainopts = {}
     if @options[:nops]
@@ -57,6 +63,11 @@ def main
       trainopts[:operators] = [@options[:fold]]
     end
     example = do_train trainopts
+    File.open("#{TRAINDIR}/#{example['id']}", "w") do |file|
+      file << example.to_json
+      file << "\n"
+    end
+
     mode = "training"
   end
 
