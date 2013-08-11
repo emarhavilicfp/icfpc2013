@@ -9,7 +9,7 @@ struct
     | findPairs (x::L) =
     let
       fun outerLoop curThing [] curAcc = curAcc
-        | outerLoop curthing (L as (x::xs)) curAcc = 
+        | outerLoop curThing (L as (x::xs)) curAcc = 
           let
             fun inner (t, acc) = if BitVec.orFills(curThing, t) then 
                 (curThing, t)::acc
