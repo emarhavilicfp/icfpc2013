@@ -1,0 +1,47 @@
+$(SML_LIB)/basis/basis.mlb
+$(SML_LIB)/basis/mlton.mlb
+$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
+$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
+
+	top/mlton-specific.sml
+
+	util/haskell.sml
+
+	util/assert.sml
+	util/mark.sml
+	util/flag.sml
+	util/symbol.sml
+	util/errormsg.sml
+    util/safe-io.sml
+    util/word32.sml
+	util/mersenne-twister-sig.sml
+	util/mersenne-twister.sml
+    util/bitvec.sml
+
+	lang/parsestate.sml
+	lang/parse-target.sml
+
+	lang/bv.sml
+	lang/bv.grm.sig
+	lang/bv.lex.sml
+	lang/bv.grm.sml
+
+    util/univariate.sml
+    util/parmap.sml
+
+	top/flags.sml
+	top/solver.sml
+	top/io.sml
+
+	lang/elab.sml
+	lang/parse.sml
+	lang/test-util.sml
+	lang/bv-test.sml
+	lang/evaluator.sml
+
+	solve/brute.sml
+	solve/brute_solve.sml
+	solve/bonus.sml
+
+	top/top.sml
+	top/top_multimlton.sml
