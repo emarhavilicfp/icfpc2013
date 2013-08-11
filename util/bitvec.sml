@@ -1,16 +1,22 @@
 signature BITVEC =
 sig
-  type bitvec
-  val new : int -> bitvec
-  val set : bitvec * int -> unit
-  val orFills : (bitvec * bitvec) -> bool
-  val doubleSize : bitvec -> bitvec
+  type t
+  val new : int -> t
+  val set : t * int -> unit
+  val orFills : (t * t) -> bool
+  val doubleSize : t -> t
 end
 
 structure BitVec : BITVEC =
 struct
-  type bitvec = (int * Word.word Array.array)
-
+  (* A BitVec is a tuple of a size -- in bits -- and the actual storage
+     element.  BitVec is an imperative data store, except for the doubleSize
+     operation.
+    
+     Note that we allocate more than necessary in new -- the size of the
+     Array could actually be larger than (numWords bits) of the array.  This
+     allows resizes to be lightweight.  *)
+  type t = (int * Word.word Array.array)
 
   infixr 0 $
   fun f $ x = f x
@@ -19,6 +25,7 @@ struct
   fun wordOffset bNum = bNum div Word.wordSize
   fun bitOffset bNum = bNum mod Word.wordSize
 
+  (* Start with double size to allow for quick resizes. *)
   fun new size = (size, Array.array ((numWords size) * 2, 0w0))
 
   fun set ((_, a), i) =
@@ -32,31 +39,37 @@ struct
 
   exception Size
   exception NOPE
+  (* Compare two bitvecs, returning true iff bv1 | bv2 == ~0. *)
   fun orFills ((s1, a1), (s2, a2)) =
     let
+      val _ = if s1 <> s2 then raise Size else ()
+      
+      (* numFullWords is the index of the highest full word, or ~1 if no such exists.
+       * Consider 0; wordOffset 0 = 0, numFullWords = ~1.
+       * Consider size-1; wordOffset size-1 = 0; numFullWords = ~1.
+       * Consider size; wordOffset size = 1; numFullWords = 0.
+       *)
       val numFullWords = (wordOffset s1) - 1
-      fun foldFulls (~1) curRes = curRes
-        | foldFulls n curRes =
-          if not curRes then raise NOPE else
-            foldFulls (n-1) (
-              (case Word.compare(neg1, Word.andb(Array.sub (a1, n), Array.sub (a2, n)))
-                of EQUAL => true | _ => false) andalso curRes)
+      fun foldFulls (~1) = true
+        | foldFulls n =
+          if Word.orb (Array.sub (a1, n), Array.sub (a2, n)) <> neg1
+          then false
+          else foldFulls (n-1)
 
-      fun checkLast () = (case Word.compare (Word.-(Word.<<(0w1, Word.fromInt $ bitOffset s1), 0w1),
-                           Word.andb(Array.sub(a1, wordOffset s1), Array.sub(a2, wordOffset s1)))
-                          of EQUAL => true | _ => false)
+      val fulls = foldFulls numFullWords
+      
+      (* bitOffset 0 is 0; 1<<0 - 1 = 0; OK.
+       * bitOffset 1 is 1; 1<<1 - 1 = 1; OK.
+       * bitOffset 2 is 2; 1<<2 - 1 = 3; OK.
+       *)
+      val lasts = Word.-(Word.<<(0w1, Word.fromInt $ bitOffset s1), 0w1) =
+                  Word.orb(Array.sub(a1, wordOffset s1), Array.sub(a2, wordOffset s1))
     in
-      if s1 <> s2 then raise Size else
-        if bitOffset s1 = 0 then foldFulls numFullWords true handle NOPE => false
-        else
-          let
-            val fulls = foldFulls numFullWords true handle NOPE => false
-            val last = checkLast ()
-          in
-            fulls andalso last
-          end
+      fulls andalso lasts
     end
 
+  (* doubleSize initially appears linear, if you only look at the else
+     clause, but it's actually a linear function -- the input is consumed. *)
   fun doubleSize (s, a) = if (numWords s) < (Array.length a) then (2*s, a)
     else let
       val newSize = 2*s
