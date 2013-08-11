@@ -137,12 +137,30 @@ struct
       ()
     end
   
+  fun solve_with_size (a: Solver.spec) i =
+    let
+      val _ = log ("solve: generating of size " ^ (Int.toString i) ^ "...\n")
+      val choices = Brute.generate {size = i, ops = (#ops a)}
+    in
+      server choices
+        handle NoSolution => (log "no solution of that size")
+    end
+
+  fun solve_upto_size a 0 = ()
+    | solve_upto_size a 1 = ()
+    | solve_upto_size a n =
+        let
+          val _ = solve_upto_size a (n-1)
+        in
+          solve_with_size a n
+        end
+
   fun solve a =
     let
-      val _ = log ("solve: generating...\n")
-      val initchoices = Brute.generate a
+      val sz = #size a
+      val _ = log ("solve: solving up to " ^ (Int.toString sz) ^  " ...\n")
     in
-      server initchoices
+      solve_upto_size a sz
     end
 
   val solver : Solver.solver =
