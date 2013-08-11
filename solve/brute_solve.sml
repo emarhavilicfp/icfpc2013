@@ -55,10 +55,10 @@ struct
 
   (* Filter down a bunch of functions into those that are consistent
      with the target function on `inputs`.
-
-     Returns the filtered list wrapped in a `narrowed` datatype to
-     signify whether it was only vacuously consistent with the target
-     function (because `inputs` is `nil`).
+     
+     Returns a tuple of (bool, programs); the boolean represents whether the
+     set was actually shrunk.  If it wasn't, then the dataset is inseparable
+     on the provided inputs.
    *)
   fun narrow choices (input: narrowinput) : narrowed =
     let
@@ -83,8 +83,8 @@ struct
           case (possible, oldlen = newlen)
           of ((true, ps), true) => (false, ps)
            | (ps, _) => ps
-      val _ = log ("Narrowed " ^ (Int.toString oldlen) ^
-                   " to " ^ (Int.toString newlen) ^ "\n")
+      val _ = log ("solve: narrow: " ^ (Int.toString oldlen) ^
+                   " -> " ^ (Int.toString newlen) ^ " programs\n")
     in
       possible'
     end
@@ -92,44 +92,44 @@ struct
   fun solve a =
     let
       val _ = mt := (MT.init32 (!Flags.seed))
-      fun rep (true, []) = raise Fail "Uhm..."
-        | rep (false, []) = raise Fail "Double uhm..."
-
-        | rep (true,(p :: nil)) = ServerIO.guess p
+      fun rep (_, []) = raise Fail "No choices left over!  Correct solution either excessively narrowed or never generated."
+          
+          (* We successfully narrowed down -- run it again. *)
         | rep (true, ps) =
           let
-            val _ = log ("solve: rep: creating inputs for "^(Int.toString $ length ps)^" programs...\n");
+            val _ = log ("solve: rep: creating inputs for "^(Int.toString $ length ps)^" programs...\n")
             val inputs =
               if (length ps) > 1500000
               then (log ((Int.toString $ length ps) ^ " is *far* too many to evaluate on...\n");
                     quickn $ Int.min (4, !Flags.nquestions))
               else ndisambig ps (!Flags.nquestions)
-            val _ = log ("solve: rep: narrowing...\n");
+            val _ = log ("solve: rep: narrowing...\n")
           in
             rep (narrow ps (UNKNOWN inputs))
           end
-
-        | rep (false, (p :: nil)) = ServerIO.guess p
+          
+          (* We didn't have any success narrowing it down -- time to guess one! *)
         | rep (false, ps) =
           let
+            val _ = log ("solve: rep: had to guess one from a list of "^(Int.toString $ length ps)^" programs\n")
             val result = ServerIO.guess (List.hd ps)
           in
             case result
-            of ServerIO.RIGHT => result
+            of ServerIO.RIGHT
+                 => result
              | ServerIO.WRONG { input = inp,
                                 exp = exp,
-                                ours = ours } =>
-               rep (narrow ps $ KNOWN (inp, exp))
+                                ours = ours }
+                 => rep (narrow ps $ KNOWN (inp, exp))
           end
+      
       val _ = log ("solve: generating...\n")
-      val res = rep (true, (Brute.generate a))
+      val initchoices = Brute.generate a
+      val _ = log ("solve: iterating...\n")
+      val _ = rep (true, initchoices) (* effect: guesses the right answer, or throws an exception if we failed *)
       val _ = Flags.seed := MT.rand32 (!mt)
     in
-      case res
-      of ServerIO.RIGHT => ()
-       | ServerIO.WRONG _ =>
-         raise Fail ("I'm pretty sure we're right, " ^
-                     "but the server said we are wrong")
+      ()
     end
 
   val solver : Solver.solver =
