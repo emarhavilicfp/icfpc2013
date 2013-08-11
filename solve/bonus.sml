@@ -5,6 +5,23 @@ struct
   infixr 0 $
   fun f $ x = f x
 
+  fun findPairs [] = []
+    | findPairs (x::L) =
+    let
+      fun outerLoop curThing [] curAcc = curAcc
+        | outerLoop curthing (L as (x::xs)) curAcc = 
+          let
+            fun inner (t, acc) = if BitVec.orFills(curThing, t) then 
+                (curThing, t)::acc
+              else acc
+            val newAcc = foldr inner curAcc L
+          in
+            outerLoop x xs newAcc
+          end
+    in
+      outerLoop x L []
+    end
+
   val minsize = 5 (* Believed minimum size of f, g, or h. *)
 
   fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
