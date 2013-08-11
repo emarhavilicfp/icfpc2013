@@ -278,7 +278,7 @@ struct
 
   fun uniquify progs =
     let
-      val hashfn = HashString.hashString o show
+      val hashfn = HashString.hashString o show_short
       val table = HashTable.mkTable (hashfn, (fn (x,y) => x = y))
                                     (List.length progs, BruteHash)
     in

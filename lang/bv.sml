@@ -27,6 +27,7 @@ sig
   datatype program = Lambda of id * expr
 
   val show : program -> string
+  val show_short : program -> string (* 1 char per nobe *)
   val show_expr : expr -> string
 
   val all_operators        : operator list
@@ -105,6 +106,31 @@ struct
           "(" ^ show_binop oper ^ " " ^ show_expr e1 ^ " " ^ show_expr e2 ^ ")"
 
   fun show (Lambda (x,e)) = "(lambda (" ^ show_id x ^ ") " ^ show_expr e ^ ")"
+
+  fun show_short_unop Not   = "!"
+    | show_short_unop Shl1  = "<"
+    | show_short_unop Shr1  = ">"
+    | show_short_unop Shr4  = "4"
+    | show_short_unop Shr16 = "6"
+
+  fun show_short_binop And  = "&"
+    | show_short_binop Or   = "|"
+    | show_short_binop Xor  = "^"
+    | show_short_binop Plus = "+"
+
+  fun show_short_expr Zero = "0"
+    | show_short_expr One = "1"
+    | show_short_expr (Id x) = show_id x
+    | show_short_expr (Ifz (e0,e1,e2)) =
+          "z" ^ show_short_expr e0 ^ "z" ^ show_short_expr e1 ^ "z" ^ show_short_expr e2
+    | show_short_expr (Fold (ev,e0,x,y,e)) =
+          "f" ^ show_short_expr ev ^ "f" ^ show_short_expr e0
+          ^ "f" ^ show_id x ^ "," ^ show_id y ^ "." ^ show_short_expr e
+    | show_short_expr (Unop (oper,e)) = show_short_unop oper ^ show_short_expr e
+    | show_short_expr (Binop (oper,e1,e2)) =
+          show_short_binop oper ^ show_short_expr e1 ^ "b" ^ show_short_expr e2
+
+  fun show_short (Lambda (x,e)) = show_id x ^ "." ^ show_short_expr e
 
   (* computing AST size *)
 
