@@ -12,7 +12,8 @@ struct
   (* TODO joshua *)
   fun find_segregator (pairs: (Word64.word * Word64.word) list)
                       (gprog: BV.program, hprog: BV.program)
-                      (possible_fs: BV.program list) : BV.program list =
+                      (possible_fs: BV.program list)
+                      : (BV.program list * BV.program list) =
         raise Fail "unimplemented"
 
   fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
