@@ -4,17 +4,60 @@ struct
   open BV;
   infixr 0 $
   fun f $ x = f x
+  
+  val log = Flags.log
 
   fun mapi f l = map f $ ListPair.zip (List.tabulate (length l, fn x => x), l);
+  
+  (* match_choice attempts to match a program from a pregenerated list to a
+     list of correct outputs.  In particular, it returns a list of fs such that:
+       if0 f(x)
+       then g(x)
+       else h(x)
+     Note that the f(x) *includes* the "& 1"!
+     
+     It also returns a list of f's such that:
+       if0 f'(x)
+       then h(x)
+       else g(x)
+   *)
+  fun match_choice values (g, h) ps =
+    let
+      val results =
+        List.map (fn (q,a) =>
+          ((Eval.eval g q) = a,
+           (Eval.eval h q) = a))
+          values
+      val fmap =
+        List.mapPartial
+                     (* gcorr, hcorr *)
+          (fn ((q, a), (true, true)) => NONE
+            | ((q, a), (true, false)) => SOME (q, 0w1 : Word64.word)
+            | ((q, a), (false, true)) => SOME (q, 0w0 : Word64.word)
+            | ((q, a), (false, false)) => raise Fail "neither g nor h matched?"
+          )
+          (ListPair.zip (values, results))
+      val f'map =
+        List.map
+          (fn (q, 0w0) => (q, 0w1 : Word64.word)
+            | (q, 0w1) => (q, 0w0 : Word64.word)
+            | _ => raise Fail "bad value in fmap?"
+          )
+          fmap
+      val fs =
+        List.filter
+          (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) fmap)
+          ps
+      val f's =
+        List.filter
+          (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) f'map)
+          ps
+      val _ = log ("bonus: match_choice: matched "^(Int.toString $ length ps)^" programs and "^(Int.toString $ length values)^" test cases to "^(Int.toString $ length fs)^" fs and "^(Int.toString $ length f's)^" f's\n")
+    in
+      (fs, f's)
+    end
 
   val minsize = 5 (* Believed minimum size of f, g, or h. *)
-
-  (* TODO joshua *)
-  fun find_segregator (pairs: (Word64.word * Word64.word) list)
-                      (gprog: BV.program, hprog: BV.program)
-                      (possible_fs: BV.program list)
-                      : (BV.program list * BV.program list) =
-        raise Fail "unimplemented"
 
   fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
     | solve minsize (spec: Solver.spec) : unit =
@@ -105,7 +148,7 @@ struct
             let
               val max_f_size = segr_size gsize hsize
               val matching_fs =
-                    find_segregator pairs gh $ List.nth (fs, max_f_size-minsize)
+                    match_choice pairs gh $ List.nth (fs, max_f_size-minsize)
             in
               raise Fail "unimplemented" (* revappend map ... *)
             end
