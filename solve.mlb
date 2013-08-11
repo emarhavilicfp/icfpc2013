@@ -37,6 +37,7 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 
 	solve/brute.sml
 	solve/brute_solve.sml
+	solve/bonus.sml
 
 	top/top.sml
 	top/top_mlton.sml

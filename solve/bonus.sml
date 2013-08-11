@@ -173,7 +173,7 @@ struct
           val whole_progs_gh = List.map make_fgh matching_fs_gh
           val whole_progs_hg = List.map make_fgh matching_fs_gh
         in
-          revAppend (whole_progs_gh, revAppend (whole_progs_hg, whole_progs))
+          List.revAppend (whole_progs_gh, List.revAppend (whole_progs_hg, whole_progs))
         end
 
       val candidate_progs = foldr find_segregators [] candidate_pairs
