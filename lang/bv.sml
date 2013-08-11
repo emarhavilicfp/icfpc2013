@@ -69,6 +69,7 @@ struct
                     | O_Ifz
                     | O_Tfold
                     | O_Fold
+                    | O_Bonus
 
   datatype program = Lambda of id * expr
 
