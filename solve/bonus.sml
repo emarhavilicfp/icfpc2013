@@ -144,6 +144,9 @@ struct
       (**** Find all pairs of g/h candidates. ****)
       val _ = log ("bonus: building g/h pairs\n")
 
+      val ghs_top_bit_set =
+        List.map (List.filter (fn (_,wector) => BitVec.top_bit_set wector)) ghs
+
       (* Note that each slot in the list contains all programs of sizes less
        * than that slot's size, too, so we only pair up against one slot. *)
       fun find_pairs ((g as (gprog:BV.program,gwec:BitVec.t)), candidates)
@@ -163,10 +166,12 @@ struct
                 ((gprog,hprog),(gsize,hsize))::candidates
               end
             else candidates
+          val where_to_look =
+            if BitVec.top_bit_set gwec then ghs else ghs_top_bit_set
         in
           (* Pick hs from the slot in the list that has programs no bigger
            * than the max allowable size for h given g's size. *)
-          foldr does_h_match candidates $ List.nth (ghs, max_h_size-minsize)
+          foldr does_h_match candidates $ List.nth (where_to_look, max_h_size-minsize)
         end
       (* The last slot has programs of all sizes.
        * Without loss of general fantasy, 'g' is not smaller than 'h'. *)

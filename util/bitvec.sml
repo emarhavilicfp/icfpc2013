@@ -5,6 +5,8 @@ sig
   val set : t * int -> t
   val orFills : (t * t) -> bool
   val test : unit -> bool
+
+  val top_bit_set : t -> bool
 end
 
 structure BitVec : BITVEC =
@@ -20,6 +22,9 @@ struct
 
   infixr 0 $
   fun f $ x = f x
+
+  fun top_bit_set (_, wector) =
+    Word.andb (Array.sub(wector, 0), 0w1) = 0w1
 
   fun numWords bits = ((bits + (Word.wordSize - 1)) div Word.wordSize)
   fun wordOffset bNum = bNum div Word.wordSize
@@ -99,6 +104,10 @@ struct
       Assert.assert "odds | ~0" (orFills(v4, v2)),
       Assert.assert "!(0 | odds)" (not(orFills(v1, v4))),
       Assert.assert "~0 | evens" (orFills(v2, v3)),
+      Assert.assert "none not set" $ not $ top_bit_set v1,
+      Assert.assert "allbits set" $ top_bit_set v2,
+      Assert.assert "even bits set" $ top_bit_set v3,
+      Assert.assert "odds not set" $ not $ top_bit_set v4,
       true
     ]
   end
