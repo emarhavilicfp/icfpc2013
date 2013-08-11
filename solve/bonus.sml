@@ -9,6 +9,9 @@ struct
 
   fun mapi f l = map f (ListPair.zip (List.tabulate (length l, fn x => x), l));
 
+  fun revappend [] ys = ys
+    | revappend (x::xs) ys = revappend xs (x::ys)
+
   (* match_choice attempts to match a program from a pregenerated list to a
      list of correct outputs.  In particular, it returns a list of fs such that:
        if0 f(x)
@@ -197,7 +200,7 @@ struct
           val whole_progs_gh = List.map make_fgh matching_fs_gh
           val whole_progs_hg = List.map make_fhg matching_fs_hg
         in
-          List.revAppend (whole_progs_gh, List.revAppend (whole_progs_hg, whole_progs))
+          revappend (whole_progs_gh, revappend (whole_progs_hg, whole_progs))
         end
 
       val candidate_progs = foldr find_segregators [] candidate_pairs
