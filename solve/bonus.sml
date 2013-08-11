@@ -31,35 +31,34 @@ struct
           ((Eval.eval g q) = a,
            (Eval.eval h q) = a))
           values
-      val fmap =
-        List.mapPartial
+      val fmap : Word64.word option list =
+        List.map
                      (* gcorr, hcorr *)
           (fn ((q, a), (true, true)) => NONE
-            | ((q, a), (true, false)) => SOME (q, 0w0 : Word64.word)
-            | ((q, a), (false, true)) => SOME (q, 0w1 : Word64.word)
+            | ((q, a), (true, false)) => SOME (0w0 : Word64.word)
+            | ((q, a), (false, true)) => SOME (0w1 : Word64.word)
             | ((q, a), (false, false)) => raise Fail "neither g nor h matched?"
           )
           (ListPair.zip (values, results))
-      val f'map =
+      val f'map : Word64.word option list =
         List.map
-          (fn (q, 0w0) => (q, 0w1 : Word64.word)
-            | (q, 0w1) => (q, 0w0 : Word64.word)
-            | _ => raise Fail "bad value in fmap?"
+          (fn SOME (0w0) => SOME (0w1 : Word64.word)
+            | SOME (0w1) => SOME (0w0 : Word64.word)
+            | SOME (_) => raise Fail "shit"
+            | NONE => NONE
           )
           fmap
+      fun satisfies (SOME(a),(_,a2)) = a = a2
+        | satisfies (NONE, _) = true
       val fs : BV.program list =
         List.mapPartial
           (fn (prog, results) =>
-            if List.all (fn (q, a) => (Eval.eval prog q) = a) fmap then
-              SOME prog
-            else NONE)
+            if ListPair.all satisfies (fmap, results) then SOME prog else NONE)
           ps
       val f's : BV.program list =
         List.mapPartial
           (fn (prog, results) =>
-            if List.all (fn (q, a) => (Eval.eval prog q) = a) f'map then
-              SOME prog
-            else NONE)
+            if ListPair.all satisfies (f'map, results) then SOME prog else NONE)
           ps
       (*
       val _ = log ("bonus: match_choice: matched "^(Sdl ps)^" programs and "^(Sdl values)^" test cases to "^(Sdl fs)^" fs and "^(Sdl f's)^" f's\n")
