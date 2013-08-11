@@ -21,6 +21,7 @@ Group is
 
 	solve/brute.sml
 	solve/brute_solve.sml
+	solve/bonus.sml
 
 (*	type/type.sml
 	parse/ast.sml
