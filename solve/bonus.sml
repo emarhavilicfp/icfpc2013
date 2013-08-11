@@ -144,17 +144,22 @@ struct
             : ((BV.program * BV.program) * (int * int)) list =
         let
           val gsize = size gprog - 1 (* strip g's outer lambda *)
-          val max_h_size = other_size gsize
+          val gsize' = Int.max (minsize, gsize) (* Smaller ones get generated too. *)
+          val max_h_size = other_size gsize'
+          val _ = Assert.assert "hsize too big" $ max_h_size <= maxsize
+          val _ = Assert.assert "hsize too small" $ max_h_size >= minsize
           fun does_h_match ((hprog,hwec), candidates) =
             if BitVec.orFills(hwec,gwec) then
               let val hsize = size hprog - 1 (* likewise outer lambda *)
-              in ((gprog,hprog),(gsize,hsize))::candidates
+              in
+                log ("bonus: match made! (sizes " ^ Int.toString gsize ^ " " ^
+                     Int.toString hsize ^ ")\n");
+                ((gprog,hprog),(gsize,hsize))::candidates
               end
             else candidates
         in
           (* Pick hs from the slot in the list that has programs no bigger
            * than the max allowable size for h given g's size. *)
-          log ("bonus: ghs size "^(Sdl ghs)^", asking for max_h_size "^(Sd max_h_size)^" - minsize "^(Sd minsize)^"\n");
           foldr does_h_match candidates $ List.nth (ghs, max_h_size-minsize)
         end
       (* The last slot has programs of all sizes.
@@ -169,7 +174,8 @@ struct
                             whole_progs) =
         let
           val _ = Assert.assert "xg xh aren't the same" $ xg = xh
-          val max_f_size = segr_size gsize hsize
+          val max_f_size = (* As in find_pairs, smaller ones are generated. *)
+            segr_size (Int.max (minsize, gsize)) (Int.max (minsize, hsize))
           val (matching_fs_gh, matching_fs_hg) =
                 match_choice pairs gh $ List.nth (fs, max_f_size-minsize)
           (* Function to glue all 3 together, with 'g' in the true branch. *)
