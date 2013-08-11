@@ -56,6 +56,14 @@ struct
     in
       (fs, f's)
     end
+  
+  fun try_programs ps =
+    (log ("bonus: try_results: about to send "^(Int.toString $ length ps)^" results up to the server\n");
+     BruteSolve.server ps;
+     true)
+      handle BruteSolve.NoSolution =>
+        (log ("bonus: try_results: no solution\n");
+         false)
 
   val minsize = 5 (* Believed minimum size of f, g, or h. *)
 
@@ -161,7 +169,7 @@ struct
       val candidate_progs = foldr find_segregators [] candidate_pairs
     in
       (* Outer loop. Repeat with a laxer minsize if our estimate was too big. *)
-      if (raise Fail "unimplemented") candidate_progs then ()
+      if try_programs candidate_progs then ()
       else (Flags.log ("Minsize " ^ Int.toString minsize ^ " not min enough.");
             solve (minsize-1) spec)
     end

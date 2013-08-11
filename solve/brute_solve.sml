@@ -95,7 +95,8 @@ struct
        quickn $ Int.min (4, !Flags.nquestions))
     else ndisambig progs (!Flags.nquestions)
 
-  fun solve a =
+  exception NoSolution
+  fun server ps =
     let
       val _ = mt := (MT.init32 (!Flags.seed))
       fun rep (_, []) = raise Fail "No choices left over!  Correct solution either excessively narrowed or never generated."
@@ -125,13 +126,19 @@ struct
                  => rep (narrow ps $ KNOWN (inp, exp))
           end
       
-      val _ = log ("solve: generating...\n")
-      val initchoices = Brute.generate a
       val _ = log ("solve: iterating...\n")
-      val _ = rep (true, initchoices) (* effect: guesses the right answer, or throws an exception if we failed *)
+      val _ = rep (true, ps) (* effect: guesses the right answer, or throws an exception if we failed *)
       val _ = Flags.seed := MT.rand32 (!mt)
     in
       ()
+    end
+  
+  fun solve a =
+    let
+      val _ = log ("solve: generating...\n")
+      val initchoices = Brute.generate a
+    in
+      server initchoices
     end
 
   val solver : Solver.solver =
