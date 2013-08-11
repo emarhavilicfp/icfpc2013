@@ -8,6 +8,7 @@ require 'optparse'
 
 AUTHKEY = "0132X9AqfwFADPNaFAspP3eFjUdCx0fVpxWS6pHd"
 TRAINDIR = "training"
+API_URI = "http://icfpc2013.cloudapp.net/"
 
 def main
   @options = {}
@@ -15,7 +16,11 @@ def main
   @options[:bin] = "bin/solve"
 
   OptionParser.new do |opts|
-    opts.banner = "Usage: driver.rb [--tty] [--quiet] {--real ID | [-n N] [--fold fold|tfold|nofold]} [-- <solver args>]"
+    opts.banner = "Usage: driver.rb [--proxy host[:port]] [--tty] [--quiet] {--real ID | [-n N] [--fold fold|tfold|nofold]} [-- <solver args>]"
+
+    opts.on("-p", "--proxy host[:port]", "Connect to a proxy API server, instead of the real API server") do |p|
+      @options[:proxy] = p
+    end
 
     opts.on("-r", "--real ID", "Real mode, with problem ID to solve (default is training mode)") do |r|
       @options[:pid] = r
@@ -45,6 +50,11 @@ def main
       @options[:transcript] = false
     end
   end.parse!
+
+  @api_uri = API_URI
+  if @options[:proxy]
+    @api_uri = "http://#{@options[:proxy]}/"
+  end
 
   example = nil
   if @options[:pid]
@@ -198,7 +208,7 @@ end
 
 DELAY = 5
 def icfp_post(method, body)
-  uri = URI("http://icfpc2013.cloudapp.net/")
+  uri = URI(@api_uri)
   http = Net::HTTP.new(uri.host, uri.port)
   req = Net::HTTP::Post.new("/#{method.to_s}?auth=#{AUTHKEY}vpsH1H")
   req.body = body.to_json
