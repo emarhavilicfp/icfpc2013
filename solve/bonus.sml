@@ -136,7 +136,7 @@ struct
         if size = maxsize then
           (* welp, I don't want to change the Brute.generate structure now, so. *)
           List.map (fn Lambda(x,e) => Lambda(x,Binop(And,e,One))) biggest_progs
-        else Brute.generate {size=1+size,ops=ops}
+        else Brute.generate_and1 {size=1+size,ops=ops}
       (* Note: 1+size for the enclosing lambda, not part of f/g/h. *)
       val ghs = List.map (fn x => generate_wector x) size_categories
       val fs  = List.map (fn x => generate_and1   x) size_categories
@@ -192,7 +192,7 @@ struct
             (Assert.assert "xf/xh/xg" (xf = xg); Lambda(xf, Ifz(ef,eh,eg)))
           (* Got here. *)
           val whole_progs_gh = List.map make_fgh matching_fs_gh
-          val whole_progs_hg = List.map make_fgh matching_fs_gh
+          val whole_progs_hg = List.map make_fhg matching_fs_hg
         in
           List.revAppend (whole_progs_gh, List.revAppend (whole_progs_hg, whole_progs))
         end
