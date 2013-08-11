@@ -11,10 +11,16 @@ struct
   val w32w64 = Word64.fromLargeInt o Word32.toLargeInt
   
   fun random () =
-    Word64.orb (
-      Word64.<< (w32w64 $ MT.rand32 (!mt), 0w32),
-      w32w64 $ MT.rand32 (!mt)
-    )
+    let
+      val _ = mt := (MT.init32 (!Flags.seed))
+      val rv = Word64.orb (
+        Word64.<< (w32w64 $ MT.rand32 (!mt), 0w32),
+        w32w64 $ MT.rand32 (!mt)
+      )
+      val _ = Flags.seed := MT.rand32 (!mt)
+    in
+      rv
+    end
 
   (* Takes a list of functions, evaluates them on a random input word
      to get a list of outputs.  If any outputs differ from the first,
@@ -98,7 +104,6 @@ struct
   exception NoSolution
   fun server ps =
     let
-      val _ = mt := (MT.init32 (!Flags.seed))
       fun rep (_, []) = raise Fail "No choices left over!  Correct solution either excessively narrowed or never generated."
           
           (* We successfully narrowed down -- run it again. *)
@@ -128,7 +133,6 @@ struct
       
       val _ = log ("solve: iterating...\n")
       val _ = rep (true, ps) (* effect: guesses the right answer, or throws an exception if we failed *)
-      val _ = Flags.seed := MT.rand32 (!mt)
     in
       ()
     end
