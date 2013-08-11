@@ -104,8 +104,8 @@ struct
   exception NoSolution
   fun server ps =
     let
-      fun rep (_, []) = raise Fail "No choices left over!  Correct solution either excessively narrowed or never generated."
-          
+      fun rep (_, []) = raise NoSolution
+      
           (* We successfully narrowed down -- run it again. *)
         | rep (true, ps) =
           let
