@@ -4,20 +4,20 @@ struct
   open BV;
   infixr 0 $
   fun f $ x = f x
-  
+
   val log = Flags.log
   val Sd = Int.toString
   fun Sdl (a : 'a list) = Int.toString $ length a
 
   fun mapi f l = map f $ ListPair.zip (List.tabulate (length l, fn x => x), l);
-  
+
   (* match_choice attempts to match a program from a pregenerated list to a
      list of correct outputs.  In particular, it returns a list of fs such that:
        if0 f(x)
        then g(x)
        else h(x)
      Note that the f(x) *includes* the "& 1"!
-     
+
      It also returns a list of f's such that:
        if0 f'(x)
        then h(x)
@@ -64,7 +64,7 @@ struct
     in
       (fs, f's)
     end
-  
+
   fun try_programs ps =
     (log ("bonus: try_results: about to send "^(Sdl ps)^" results up to the server\n");
      BruteSolve.server ps;
@@ -212,34 +212,46 @@ struct
   (* Not really tests, but. *)
 
   fun test() = List.all (fn x => x) [
-    let 
+    let
       fun split_ifzs (Lambda(_,Ifz(Binop (And,f,One),g,h))) = (f,g,h)
         | split_ifzs (Lambda(_,Ifz(_,_,_))) = raise Fail "non-and1 bonus"
         | split_ifzs _ = raise Fail "non-ifz bonus"
 
       val progs = List.map (split_ifzs o TestUtil.Parse) [
-        "(lambda (x_5) (if0 (and (and 1 (shr16 (shr16 x_5))) 1) (plus (shr4 (shr16 x_5)) 1) (and (shr1 x_5) (and (shl1 x_5) x_5))))", 
-        "(lambda (x_7) (if0 (and (or x_7 (and (not (shr4 x_7)) 1)) 1) (xor x_7 (shr4 (not x_7))) (plus (shl1 (not x_7)) (not 0))))", 
-        "(lambda (x_1) (if0 (and (xor x_1 (shr16 (shr4 (shr16 (shr16 x_1))))) 1) (plus (shr16 (shr16 x_1)) (plus x_1 1))  (if0 (shr4 x_1) 1 (xor x_1 1))))", 
-        "(lambda (x_11) (if0 (and (not (shr16 (not (shr1 x_11)))) 1) (and (plus (plus 1 x_11) x_11) x_11) (plus x_11 (not (shr1 x_11)))))", 
-        "(lambda (x_9) (if0 (and (plus (shr16 (shr16 (shl1 x_9))) (shr16 x_9)) 1) (plus x_9 (shl1 (and (shr4 x_9) x_9))) (plus 1 (plus x_9 x_9))))", 
-        "(lambda (x_4) (if0 (and (and (not (shr1 x_4)) (shr16 (not 0))) 1) (xor (plus 1 x_4) 1) (or (plus x_4 (not (shr16 x_4))) x_4)))", 
-        "(lambda (x_4) (if0 (and (and (shr1 (not x_4)) x_4) 1) (and x_4 (plus x_4 1))  (and (shr4 x_4) (plus (not x_4) (not 0)))))", 
-        "(lambda (x_20) (if0 (and (or x_20 (and (not (shr4 x_20)) 1)) 1) (not (or x_20 (shr1 x_20))) (plus x_20 (shl1 (and (shl1 x_20) x_20)))))", 
-        "(lambda (x_7) (if0 (and (xor x_7 (plus (shr16 (not x_7)) x_7)) 1) (plus (not 1) (if0 x_7 1 x_7)) (plus (or (not x_7) (shr4 x_7)) x_7)))", 
-        "(lambda (x_8) (if0 (and (and 1 (not (xor (shr4 x_8) x_8))) 1) (and (shr4 (shr16 x_8)) x_8) (plus (shr4 (shr4 (shr16 (shr1 x_8)))) x_8)))", 
-        "(lambda (x_20) (if0 (and (plus x_20 (shl1 (and (shr4 x_20) x_20))) 1) (xor (plus (plus x_20 1) 1) 1) (and (plus 1 (not (shr16 x_20))) x_20)))", 
-        "(lambda (x_7) (if0 (and (xor (or (shr4 (shr16 x_7)) x_7) x_7) 1) (xor x_7 (shr4 (not x_7))) (xor (shr16 (shr4 x_7)) (plus 1 x_7))))", 
-        "(lambda (x_16) (if0 (and (plus x_16 (plus (shr4 (shr4 x_16)) 1)) 1) (shl1 (plus 1 (shr1 x_16))) (plus (not 1) (if0 x_16 1 x_16))))", 
-        "(lambda (x_15) (if0 (and (or (not 1) (if0 x_15 1 x_15)) 1) (xor (plus x_15 1) 1) (and x_15 (plus x_15 x_15))))", 
+        "(lambda (x_5) (if0 (and (and 1 (shr16 (shr16 x_5))) 1) (plus (shr4 (shr16 x_5)) 1) (and (shr1 x_5) (and (shl1 x_5) x_5))))",
+        "(lambda (x_7) (if0 (and (or x_7 (and (not (shr4 x_7)) 1)) 1) (xor x_7 (shr4 (not x_7))) (plus (shl1 (not x_7)) (not 0))))",
+        "(lambda (x_1) (if0 (and (xor x_1 (shr16 (shr4 (shr16 (shr16 x_1))))) 1) (plus (shr16 (shr16 x_1)) (plus x_1 1))  (if0 (shr4 x_1) 1 (xor x_1 1))))",
+        "(lambda (x_11) (if0 (and (not (shr16 (not (shr1 x_11)))) 1) (and (plus (plus 1 x_11) x_11) x_11) (plus x_11 (not (shr1 x_11)))))",
+        "(lambda (x_9) (if0 (and (plus (shr16 (shr16 (shl1 x_9))) (shr16 x_9)) 1) (plus x_9 (shl1 (and (shr4 x_9) x_9))) (plus 1 (plus x_9 x_9))))",
+        "(lambda (x_4) (if0 (and (and (not (shr1 x_4)) (shr16 (not 0))) 1) (xor (plus 1 x_4) 1) (or (plus x_4 (not (shr16 x_4))) x_4)))",
+        "(lambda (x_4) (if0 (and (and (shr1 (not x_4)) x_4) 1) (and x_4 (plus x_4 1))  (and (shr4 x_4) (plus (not x_4) (not 0)))))",
+        "(lambda (x_20) (if0 (and (or x_20 (and (not (shr4 x_20)) 1)) 1) (not (or x_20 (shr1 x_20))) (plus x_20 (shl1 (and (shl1 x_20) x_20)))))",
+        "(lambda (x_7) (if0 (and (xor x_7 (plus (shr16 (not x_7)) x_7)) 1) (plus (not 1) (if0 x_7 1 x_7)) (plus (or (not x_7) (shr4 x_7)) x_7)))",
+        "(lambda (x_8) (if0 (and (and 1 (not (xor (shr4 x_8) x_8))) 1) (and (shr4 (shr16 x_8)) x_8) (plus (shr4 (shr4 (shr16 (shr1 x_8)))) x_8)))",
+        "(lambda (x_20) (if0 (and (plus x_20 (shl1 (and (shr4 x_20) x_20))) 1) (xor (plus (plus x_20 1) 1) 1) (and (plus 1 (not (shr16 x_20))) x_20)))",
+        "(lambda (x_7) (if0 (and (xor (or (shr4 (shr16 x_7)) x_7) x_7) 1) (xor x_7 (shr4 (not x_7))) (xor (shr16 (shr4 x_7)) (plus 1 x_7))))",
+        "(lambda (x_16) (if0 (and (plus x_16 (plus (shr4 (shr4 x_16)) 1)) 1) (shl1 (plus 1 (shr1 x_16))) (plus (not 1) (if0 x_16 1 x_16))))",
+        "(lambda (x_15) (if0 (and (or (not 1) (if0 x_15 1 x_15)) 1) (xor (plus x_15 1) 1) (and x_15 (plus x_15 x_15))))",
         "(lambda (x_11) (if0 (and (or (not 1) (if0 x_11 1 x_11)) 1) (plus x_11 (shr4 (shr16 (shr4 (shr4 x_11))))) (shl1 (shr16 (shr16 (not x_11))))))  "]
+      val bigprogs = List.map (split_ifzs o TestUtil.Parse) [
+        "(lambda (x_13) (if0 (and (shr16 (if0 (plus (plus (shr1 (xor (shr4 x_13) x_13)) 0) x_13) 1 x_13)) 1) (shl1 (shr1 (shl1 (shr4 (if0 (plus (shl1 (plus 1 1)) x_13) 1 x_13))))) (not (plus (and (if0 (shr1 (shl1 (shr1 (shr4 x_13)))) x_13 1) x_13) x_13))))",
+        "(lambda (x_12) (if0 (and (shr1 (plus (and (if0 (shr1 (shr4 (xor 1 x_12))) 0 x_12) x_12) x_12)) 1) (not (shr4 (plus (if0 (and x_12 1) (not (shr1 x_12)) x_12) 0))) (or (or (shr1 (if0 (shr16 x_12) 1 x_12)) x_12) 0)))",
+        "(lambda (x_15) (if0 (and (if0 (plus (shr16 x_15) x_15) x_15 (and x_15 1)) 1) (shr4 (shr16 (if0 (and (shr16 x_15) 1) 0 x_15))) (shr16 (xor (shr1 (if0 (xor (shr4 (not x_15)) 1) 1 (shl1 x_15))) 1))))",
+        "(lambda (x_2) (if0 (and (xor (plus (plus 1 x_2) (if0 x_2 0 1)) 0) 1) (plus (plus (if0 (xor (shl1 (xor x_2 0)) 0) 1 x_2) x_2) x_2) (shl1 (shr1 (shr4 (xor (if0 (shl1 (shr16 (shr4 (shr16 x_2)))) x_2 1) x_2))))))",
+        "(lambda (x_15) (if0 (and (not (shr1 (shr4 (plus (if0 (plus (shr4 (shr16 x_15)) 0) 1 x_15) 1)))) 1) (plus (or (if0 (plus (and x_15 (shr1 x_15)) 0) 0 x_15) 0) x_15) (and x_15 (if0 (and (shr16 x_15) 1) 1 x_15))))",
+        "(lambda (x_14) (if0 (and (not (xor (xor (if0 x_14 1 (shr1 x_14)) 1) 0)) 1) (or x_14 (shl1 (xor (if0 x_14 0 1) x_14))) (xor (not (or (if0 (shr1 (shr1 (not x_14))) (shr1 0) x_14) 1)) x_14)))",
+        "(lambda (x_3) (if0 (and (if0 (plus (shr16 x_3) x_3) 0 (or (shr4 x_3) 0)) 1) (shr16 (if0 (shr16 (shr1 (xor (shr1 (not 0)) (xor x_3 0)))) 0 x_3)) (plus (not x_3) (if0 (xor x_3 1) (not 1) 0))))",
+        "(lambda (x_15) (if0 (and (shr4 (shr4 (shr4 (plus (if0 (shr1 (and x_15 (shl1 x_15))) 0 x_15) 0)))) 1) (or (shr1 (if0 (and (shr1 (shl1 (shr1 x_15))) x_15) 0 x_15)) x_15) (or (plus (if0 (xor (shr16 0) (xor x_15 1)) 0 1) 1) x_15)))"]
 
-    in
-      List.map (fn (f,g,h) => Assert.say_yellow $
+      val f = (fn (f,g,h) => Assert.say_yellow $
           "|f| = " ^ Sd (size_expr f) ^
         "; |g| = " ^ Sd (size_expr g) ^
         "; |h| = " ^ Sd (size_expr h))
-        progs;
+    in
+      Assert.say_yellow "bonus category 42:";
+      List.map f progs;
+      Assert.say_yellow "bonus category 137:";
+      List.map f bigprogs;
       true
     end,
     true]
