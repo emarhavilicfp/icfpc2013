@@ -33,6 +33,10 @@ def main
       @options[:tty] = t
     end
     
+    opts.on("--no-solver", "Just dance, gonna be OK") do |t|
+      @options[:nosolver] = true
+    end
+    
     opts.on("--mlton", "Aplicar de MLton.") do |t|
       @options[:bin] = "bin/solve-mlton"
     end
@@ -75,6 +79,10 @@ def main
   solver_args += " --length=#{example['size']} "
   solver_args += example['operators'].map {|x| "--has-#{x}-op"}.join(" ")
   solver_args += ' ' + ARGV.join(" ")
+  
+  if @options[:nosolver]
+    abort ("not solving because you asked me not to")
+  end
   
   def with_pipe(solver_args)
     if @options[:tty]
