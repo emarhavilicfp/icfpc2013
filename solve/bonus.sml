@@ -24,7 +24,7 @@ struct
        then h(x)
        else g(x)
    *)
-  fun match_choice values (g, h) (ps : (BV.program * ((Word64.word * Word64.word) list)) list) =
+  fun match_choice values (g, h) ps =
     let
       val results =
         List.map (fn (q,a) =>
@@ -47,19 +47,13 @@ struct
             | _ => raise Fail "bad value in fmap?"
           )
           fmap
-      val fs : BV.program list =
-        List.mapPartial
-          (fn (prog, results) =>
-            if List.all (fn (q, a) => (Eval.eval prog q) = a) fmap then
-              SOME prog
-            else NONE)
+      val fs =
+        List.filter
+          (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) fmap)
           ps
-      val f's : BV.program list =
-        List.mapPartial
-          (fn (prog, results) =>
-            if List.all (fn (q, a) => (Eval.eval prog q) = a) f'map then
-              SOME prog
-            else NONE)
+      val f's =
+        List.filter
+          (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) f'map)
           ps
       (*
       val _ = log ("bonus: match_choice: matched "^(Sdl ps)^" programs and "^(Sdl values)^" test cases to "^(Sdl fs)^" fs and "^(Sdl f's)^" f's\n")
@@ -113,16 +107,6 @@ struct
           (prog, final_wector)
         end
 
-      (* Each f candidate is paired with its own results on the inputs. *)
-      fun give_results (prog: BV.program)
-                       : (BV.program * ((Word64.word * Word64.word) list)) =
-        let
-          val results: (Word64.word * Word64.word) list =
-                List.map (fn (input,_) => (input, Eval.eval prog input)) pairs
-        in
-          (prog, results)
-        end
-
       (**** Generate candidate programs. ****)
 
       (* We need to keep them in different size categories to optmz to avoid
@@ -133,11 +117,11 @@ struct
       fun generate_wector size = List.map give_wector
         (if size = maxsize then biggest_progs
          else Brute.generate {size=1+size,ops=ops})
-      fun generate_and1 size = List.map give_results
-        (if size = maxsize then
-           (* welp, I don't want to change the Brute.generate structure now, so. *)
-           List.map (fn Lambda(x,e) => Lambda(x,Binop(And,e,One))) biggest_progs
-         else Brute.generate_and1 {size=1+size,ops=ops})
+      fun generate_and1 size =
+        if size = maxsize then
+          (* welp, I don't want to change the Brute.generate structure now, so. *)
+          List.map (fn Lambda(x,e) => Lambda(x,Binop(And,e,One))) biggest_progs
+        else Brute.generate_and1 {size=1+size,ops=ops}
       (* Note: 1+size for the enclosing lambda, not part of f/g/h. *)
       val _ = log ("bonus: generating candidate g/h pairs\n")
       val ghs = List.map (fn x => generate_wector x) size_categories
