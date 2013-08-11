@@ -80,15 +80,12 @@ struct
          false)
 
   val minsize = 5 (* Believed minimum size of f, g, or h. *)
-
-  fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
-    | solve minsize (spec: Solver.spec) : unit =
+  
+  fun solve_with_tvecs (spec: Solver.spec) minsize biggest_progs pairs =
     let
+      (**** Re-reason about sizes of f, g, and h. ****)
+      
       val ops = #ops spec
-      val _ = Assert.assert "not a bonus prob" (List.exists (fn x => x = O_Bonus) ops)
-      val _ = Assert.assert "minsize way too big" (minsize < 10)
-
-      (**** Reason about sizes of f, g, and h. ****)
 
       val fgh_size = #size spec - 4 (* lambda + ifz + and + 1 *)
       val _ = Assert.assert "size too small" (fgh_size >= 3)
@@ -99,19 +96,7 @@ struct
       (* If g is size x what's the biggest h can be, assuming f is minsize? *)
       fun other_size x = fgh_size-x-minsize
       fun segr_size gsize hsize = fgh_size-gsize-hsize (* self-explanatory *)
-
-      (**** Get server input/output pairs. ****)
-
-      (* Note that we just use the max size because Brute.generate will
-       * generate all the smaller programs too. This is not inside the "inner
-       * loop"; the inner loop just iterates over server counterexamples.
-       * We do however save the biggest progs to not regen them later. *)
-      val _ = log ("bonus: generating for size "^(Sd (1+maxsize)^"\n"))
-      val biggest_progs = Brute.generate {size=1+maxsize,ops=ops}
-      val _ = log ("bonus: generating queries\n")
-      val inputs = BruteSolve.get_inputs biggest_progs
-      val pairs = ListPair.zip (inputs, ServerIO.eval inputs)
-                    : (Word64.word * Word64.word) list
+      
       (* Each g/h candidate will be paired with a bit wector that expresses how
        * much it agrees with the server's true function. *)
       fun give_wector (prog: BV.program) : (BV.program * BitVec.t) =
@@ -132,7 +117,7 @@ struct
                        : (BV.program * ((Word64.word * Word64.word) list)) =
         let
           val results: (Word64.word * Word64.word) list =
-                List.map (fn input => (input, Eval.eval prog input)) inputs
+                List.map (fn (input,_) => (input, Eval.eval prog input)) pairs
         in
           (prog, results)
         end
@@ -156,9 +141,10 @@ struct
       val _ = log ("bonus: generating candidate g/h pairs\n")
       val ghs = List.map (fn x => generate_wector x) size_categories
       val num_ghs = foldr (fn (l,x) => List.length l + x) 0 ghs
-      val _ = log ("bonus: generated " ^ Int.toString num_ghs ^ "g/hs\n")
+      val _ = log ("bonus: generated "^(Sd num_ghs)^" g/h candidate programs\n")
       val _ = log ("bonus: generating candidate f conditions\n")
       val fs  = List.map (fn x => generate_and1   x) size_categories
+      val _ = log ("bonus: generated "^(Sdl fs)^" f candidate programs\n")
 
       (**** Find all pairs of g/h candidates. ****)
       val _ = log ("bonus: building g/h pairs\n")
@@ -224,6 +210,43 @@ struct
         end
 
       val candidate_progs = foldr find_segregators [] candidate_pairs
+    in
+      candidate_progs
+    end
+
+  fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
+    | solve minsize (spec: Solver.spec) : unit =
+    let
+      val ops = #ops spec
+      val _ = Assert.assert "not a bonus prob" (List.exists (fn x => x = O_Bonus) ops)
+      val _ = Assert.assert "minsize way too big" (minsize < 10)
+
+      (**** Reason about sizes of f, g, and h. ****)
+
+      val fgh_size = #size spec - 4 (* lambda + ifz + and + 1 *)
+      val _ = Assert.assert "size too small" (fgh_size >= 3)
+      (* ???? should never be lower *)
+      val minsize =
+        let val x = fgh_size div 3 in if x < minsize then x else minsize end
+      val maxsize = fgh_size - (2 * minsize) (* e,g, 18 = 5 5 and 8 *)
+      (* If g is size x what's the biggest h can be, assuming f is minsize? *)
+      fun other_size x = fgh_size-x-minsize
+      fun segr_size gsize hsize = fgh_size-gsize-hsize (* self-explanatory *)
+
+      (**** Get server input/output pairs. ****)
+
+      (* Note that we just use the max size because Brute.generate will
+       * generate all the smaller programs too. This is not inside the "inner
+       * loop"; the inner loop just iterates over server counterexamples.
+       * We do however save the biggest progs to not regen them later. *)
+      val _ = log ("bonus: generating for size "^(Sd (1+maxsize)^"\n"))
+      val biggest_progs = Brute.generate {size=1+maxsize,ops=ops}
+      val _ = log ("bonus: generating queries\n")
+      val inputs = BruteSolve.get_inputs biggest_progs
+      val pairs = ListPair.zip (inputs, ServerIO.eval inputs)
+                    : (Word64.word * Word64.word) list
+      
+      val candidate_progs = solve_with_tvecs spec minsize biggest_progs pairs
     in
       (* Outer loop. Repeat with a laxer minsize if our estimate was too big. *)
       if try_programs candidate_progs then ()
