@@ -9,6 +9,9 @@ struct
 
   fun mapi f l = map f (ListPair.zip (List.tabulate (length l, fn x => x), l));
 
+  fun revappend ([],ys) = ys
+    | revappend ((x::xs),ys) = revappend (xs,(x::ys))
+
   (* match_choice attempts to match a program from a pregenerated list to a
      list of correct outputs.  In particular, it returns a list of fs such that:
        if0 f(x)
@@ -21,7 +24,7 @@ struct
        then h(x)
        else g(x)
    *)
-  fun match_choice values (g, h) ps =
+  fun match_choice values (g, h) (ps : (BV.program * ((Word64.word * Word64.word) list)) list) =
     let
       val results =
         List.map (fn (q,a) =>
@@ -44,18 +47,24 @@ struct
             | _ => raise Fail "bad value in fmap?"
           )
           fmap
-      val fs =
-        List.filter
-          (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) fmap)
+      val fs : BV.program list =
+        List.mapPartial
+          (fn (prog, results) =>
+            if List.all (fn (q, a) => (Eval.eval prog q) = a) fmap then
+              SOME prog
+            else NONE)
           ps
-      val f's =
-        List.filter
-          (fn prog => List.all (fn (q, a) => (Eval.eval prog q) = a) f'map)
+      val f's : BV.program list =
+        List.mapPartial
+          (fn (prog, results) =>
+            if List.all (fn (q, a) => (Eval.eval prog q) = a) f'map then
+              SOME prog
+            else NONE)
           ps
+      (*
       val _ = log ("bonus: match_choice: matched "^(Sdl ps)^" programs and "^(Sdl values)^" test cases to "^(Sdl fs)^" fs and "^(Sdl f's)^" f's\n")
       val _ = log ("   g: "^(BV.show g)^"\n")
       val _ = log ("   h: "^(BV.show h)^"\n")
-      (*
       val _ = List.map (fn f => log ("  f: "^(BV.show f)^"\n")) fs
       val _ = List.map (fn f => log (" f': "^(BV.show f)^"\n")) f's
       *)
@@ -119,6 +128,16 @@ struct
           (prog, final_wector)
         end
 
+      (* Each f candidate is paired with its own results on the inputs. *)
+      fun give_results (prog: BV.program)
+                       : (BV.program * ((Word64.word * Word64.word) list)) =
+        let
+          val results: (Word64.word * Word64.word) list =
+                List.map (fn input => (input, Eval.eval prog input)) inputs
+        in
+          (prog, results)
+        end
+
       (**** Generate candidate programs. ****)
       val _ = log ("bonus: generating candidate programs\n")
 
@@ -130,11 +149,11 @@ struct
       fun generate_wector size = List.map give_wector
         (if size = maxsize then biggest_progs
          else Brute.generate {size=1+size,ops=ops})
-      fun generate_and1 size =
-        if size = maxsize then
-          (* welp, I don't want to change the Brute.generate structure now, so. *)
-          List.map (fn Lambda(x,e) => Lambda(x,Binop(And,e,One))) biggest_progs
-        else Brute.generate_and1 {size=1+size,ops=ops}
+      fun generate_and1 size = List.map give_results
+        (if size = maxsize then
+           (* welp, I don't want to change the Brute.generate structure now, so. *)
+           List.map (fn Lambda(x,e) => Lambda(x,Binop(And,e,One))) biggest_progs
+         else Brute.generate_and1 {size=1+size,ops=ops})
       (* Note: 1+size for the enclosing lambda, not part of f/g/h. *)
       val ghs = List.map (fn x => generate_wector x) size_categories
       val fs  = List.map (fn x => generate_and1   x) size_categories
@@ -159,8 +178,10 @@ struct
             if BitVec.orFills(hwec,gwec) then
               let val hsize = size hprog - 1 (* likewise outer lambda *)
               in
+                (*
                 log ("bonus: match made! (sizes " ^ Int.toString gsize ^ " " ^
                      Int.toString hsize ^ ")\n");
+                *)
                 ((gprog,hprog),(gsize,hsize))::candidates
               end
             else candidates
@@ -197,7 +218,7 @@ struct
           val whole_progs_gh = List.map make_fgh matching_fs_gh
           val whole_progs_hg = List.map make_fhg matching_fs_hg
         in
-          List.revAppend (whole_progs_gh, List.revAppend (whole_progs_hg, whole_progs))
+          revappend (whole_progs_gh, revappend (whole_progs_hg, whole_progs))
         end
 
       val candidate_progs = foldr find_segregators [] candidate_pairs
