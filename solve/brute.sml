@@ -219,14 +219,23 @@ struct
                              (partition3 $ size-2) (* NOTE fold has size 2!! *)
                 (* If the inner e doesn't refer to either fold variable, the whole
                  * fold is equivalent to that e. *)
-                fun nonconstant_fold (_, _, e) =
+                fun nonconstant_fold (e0, _, e) =
                   (not $ check_freevars_expr vars e)
                     (* identity accumulation *)
                     andalso e <> Id acc_var andalso e <> Unop (Not, Id acc_var)
                     (* will always accumulate to zero *)
+                    (* here, shr1 and shr4 are also redundant with two greater,
+                     * shrs but require the other op to do without a fold *)
                     andalso e <> Unop (Shr16, Id acc_var)
-                    (* shr1 and shr4 are also redundant with two greater shrs,
-                     * but require the other op to do without a fold *)
+                    andalso e <> Unop (Shr4, Unop (Shr4, Id acc_var))
+                    andalso e <> Unop (Shr16, Id elt_var) (* elt < 256, so... *)
+                    andalso e <> Unop (Shr4, Unop (Shr4, Id elt_var))
+                    (* If the base is constant and has the top byte all zeroes,
+                     * then the accumulator must be used. *)
+                    andalso not
+                      (constexpr e0 andalso
+                       Suq.Word64.>> (Eval.eval_constexpr e0, 0w56) = 0w0 andalso
+                       check_freevars_expr (elt_var::vars) e (* i.e. acc_var unused *))
               in
                 List.map (fn (e0,e1,e2) => Fold (e0,e1,elt_var,acc_var,e2)) $
                          List.filter nonconstant_fold all_smaller_trips
