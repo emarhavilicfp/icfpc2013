@@ -89,6 +89,12 @@ struct
       possible'
     end
 
+  fun get_inputs progs =
+    if (length progs) > 1500000 then
+      (log $ (Int.toString $ length progs) ^ " is *far* too many to evaluate on...\n";
+       quickn $ Int.min (4, !Flags.nquestions))
+    else ndisambig progs (!Flags.nquestions)
+
   fun solve a =
     let
       val _ = mt := (MT.init32 (!Flags.seed))
@@ -98,11 +104,7 @@ struct
         | rep (true, ps) =
           let
             val _ = log ("solve: rep: creating inputs for "^(Int.toString $ length ps)^" programs...\n")
-            val inputs =
-              if (length ps) > 1500000
-              then (log ((Int.toString $ length ps) ^ " is *far* too many to evaluate on...\n");
-                    quickn $ Int.min (4, !Flags.nquestions))
-              else ndisambig ps (!Flags.nquestions)
+            val inputs = get_inputs ps
             val _ = log ("solve: rep: narrowing...\n")
           in
             rep (narrow ps (UNKNOWN inputs))

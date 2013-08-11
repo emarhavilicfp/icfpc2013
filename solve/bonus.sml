@@ -5,6 +5,49 @@ struct
   infixr 0 $
   fun f $ x = f x
 
+  val minsize = 5 (* Believed minimum size of f, g, or h. *)
+
+  fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
+    | solve minsize (spec: Solver.spec) : unit =
+    let
+      val ops = #ops spec
+      val _ = Assert.assert "not a bonus prob" $ List.exists (fn x => x = O_Bonus) ops
+
+      (**** Reason about sizes of f, g, and h. ****)
+
+      val fgh_size = #size spec - 4 (* lambda + ifz + and + 1 *)
+      val _ = Assert.assert "size too small" $ fgh_size >= 3
+      (* ???? should never be lower *)
+      val minsize =
+        let val x = fgh_size div 3 in if x < minsize then x else minsize end
+      val maxsize = fgh_size - (2 * minsize) (* e,g, 18 = 5 5 and 8 *)
+      (* If g is size x what's the biggest h can be, assuming f is minsize? *)
+      fun other_size x = fgh_size-x-minsize
+      fun segr_size gsize hsize = fgh_size-gsize-hsize (* self-explanatory *)
+
+      (**** Generate candidates. ****)
+
+      (* We need to keep them in different size categories to optmz to avoid
+       * trying g/h pairs with both of the maxsize, which would be too big.
+       * This list is, for minsize=5 and maxsize=8, is [5,6,7,8]. *)
+      val size_cats = List.tabulate (maxsize-minsize+1, fn x => minsize+x)
+      (* Note: 1+size for the enclosing lambda, not part of f/g/h. *)
+      val ghs = List.map (fn x => Brute.generate      {size=1+x,ops=ops}) size_cats
+      val fs =  List.map (fn x => Brute.generate_and1 {size=1+x,ops=ops}) size_cats
+
+      fun solve_space wectors = false
+    in
+      (* Adjust for our minsize estimate being too small. *)
+      if solve_space () then ()
+      else (Flags.log ("Minsize " ^ Int.toString minsize ^ " not min enough.");
+            solve (minsize-1) spec)
+    end
+
+  val solver : Solver.solver =
+    { shortname = "bonus", name = "bonus problem solver", f = solve minsize }
+
+
+  (* Not really tests, but. *)
 
   fun test() = List.all (fn x => x) [
     let 
