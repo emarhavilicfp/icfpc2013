@@ -12,6 +12,7 @@ struct
     let
       val ops = #ops spec
       val _ = Assert.assert "not a bonus prob" $ List.exists (fn x => x = O_Bonus) ops
+      val _ = Assert.assert "minsize way too big" $ minsize < 10
 
       (**** Reason about sizes of f, g, and h. ****)
 
@@ -25,6 +26,27 @@ struct
       fun other_size x = fgh_size-x-minsize
       fun segr_size gsize hsize = fgh_size-gsize-hsize (* self-explanatory *)
 
+      (**** Get server input/output pairs. ****)
+
+      (* Note that we just use the max size because Brute.generate will
+       * generate all the smaller programs too. This is not inside the "inner
+       * loop"; the inner loop just iterates over server counterexamples. *)
+      val inputs = BruteSolve.get_inputs $ Brute.generate {size=1+maxsize,ops=ops}
+      val pairs = ListPair.zip (inputs, ServerIO.eval inputs)
+                    : (Word64.word * Word64.word) list
+      (* Each g/h candidate will be paired with a bit wector that expresses how
+       * much it agrees with the server's true function. *)
+      fun give_wector prog =
+        let
+          fun set_wector_bit ((input,output),(wector,index)) =
+            (* Set the bit if the candidate agrees with the server on this pair. *)
+            (if Eval.eval prog input <> output then wector else
+               BitVec.set (wector, index),
+             index+1)
+        in
+          (prog, foldr set_wector_bit (BitVec.new $ List.length pairs, 0) pairs)
+        end
+
       (**** Generate candidates. ****)
 
       (* We need to keep them in different size categories to optmz to avoid
@@ -32,13 +54,22 @@ struct
        * This list is, for minsize=5 and maxsize=8, is [5,6,7,8]. *)
       val size_cats = List.tabulate (maxsize-minsize+1, fn x => minsize+x)
       (* Note: 1+size for the enclosing lambda, not part of f/g/h. *)
-      val ghs = List.map (fn x => Brute.generate      {size=1+x,ops=ops}) size_cats
-      val fs =  List.map (fn x => Brute.generate_and1 {size=1+x,ops=ops}) size_cats
+      val ghs = List.map (fn x =>
+                  List.map give_wector $ Brute.generate {size=1+x,ops=ops}) size_cats
+      val fs  = List.map (fn x => Brute.generate_and1   {size=1+x,ops=ops}) size_cats
 
-      fun solve_space wectors = false
+      (* Inner loop. Repeat finding candidate g/h pairs (with f segregators),
+       * and getting counterexamples from the server, until we get it, or we run
+       * out (in which case we are left to assume our minsize was too big). *)
+      fun solve_space ghs =
+        let
+          val shit = ()
+        in
+          raise Fail "unimplemented"
+        end
     in
-      (* Adjust for our minsize estimate being too small. *)
-      if solve_space () then ()
+      (* Outer loop. Repeat with a laxer minsize if our estimate was too big. *)
+      if solve_space ghs then ()
       else (Flags.log ("Minsize " ^ Int.toString minsize ^ " not min enough.");
             solve (minsize-1) spec)
     end
