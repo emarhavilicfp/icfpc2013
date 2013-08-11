@@ -80,22 +80,25 @@ struct
     end
 
   fun test () = let
+    val empty1 = new 64
+    val empty2 = new 64
+    val empty3 = new 64
+    val allbits = List.tabulate (64, fn x => x)
+    val evenbits = List.filter (fn x => x mod 2 = 0) allbits
+    val oddbits = List.filter (fn x => x mod 2 <> 0) allbits
     val v1 = new 64
-    val bits = List.tabulate (64, fn x => x)
-    val evens = List.filter (fn x => x mod 2 = 0) bits
-    val odds = List.filter (fn x => x mod 2 <> 0) bits
-    val v2 = List.foldr (fn (i, v) => set (v, i)) v1 bits
-    val v3 = List.foldr (fn (i, v) => set (v, i)) v1 evens
-    val v4 = List.foldr (fn (i, v) => set (v, i)) v1 odds
+    val v2 = List.foldr (fn (i, v) => set (v, i)) empty1 allbits
+    val v3 = List.foldr (fn (i, v) => set (v, i)) empty2 evenbits
+    val v4 = List.foldr (fn (i, v) => set (v, i)) empty3 oddbits
   in
     List.all (fn x => x) [
-      Assert.assert "!(0 | 0)" (not(orFills(v1, v2))),
+      Assert.assert "!(0 | 0)" (not(orFills(v1, v1))),
       Assert.assert "0 | ~0" (orFills(v1, v2)),
       Assert.assert "evens | odds" (orFills(v3, v4)),
       Assert.assert "!(evens | 0)" (not(orFills(v3, v1))),
       Assert.assert "odds | ~0" (orFills(v4, v2)),
       Assert.assert "!(0 | odds)" (not(orFills(v1, v4))),
-      Assert.assert "~0 | evens" (orFills(v1, v3)),
+      Assert.assert "~0 | evens" (orFills(v2, v3)),
       true
     ]
   end
