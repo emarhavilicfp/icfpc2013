@@ -5,21 +5,22 @@ struct
   infixr 0 $
   fun f $ x = f x
 
-  fun findPairs [] = []
-    | findPairs (x::L) =
+  fun findpairs ([] : (BV.program * BitVec.t) list) : (BV.program * BV.program) list = []
+    | findpairs (x::rest) =
     let
-      fun outerLoop curThing [] curAcc = curAcc
-        | outerLoop curThing (L as (x::xs)) curAcc = 
+      fun outerLoop (curProg,curWec) [] curAcc = curAcc
+        | outerLoop (curProg,curWec) (rest as (next::restrest)) curAcc =
           let
-            fun inner (t, acc) = if BitVec.orFills(curThing, t) then 
-                (curThing, t)::acc
+            fun inner ((otherProg,otherWec), acc) =
+              if BitVec.orFills(curWec, otherWec) then
+                (curProg, otherProg)::acc
               else acc
-            val newAcc = foldr inner curAcc L
+            val newAcc = foldr inner curAcc rest
           in
-            outerLoop x xs newAcc
+            outerLoop next restrest newAcc
           end
     in
-      outerLoop x L []
+      outerLoop x rest []
     end
 
   val minsize = 5 (* Believed minimum size of f, g, or h. *)
