@@ -92,7 +92,9 @@ struct
        * generate all the smaller programs too. This is not inside the "inner
        * loop"; the inner loop just iterates over server counterexamples.
        * We do however save the biggest progs to not regen them later. *)
+      val _ = log ("bonus: generating for size "^(Int.toString $ 1+maxsize)^"\n")
       val biggest_progs = Brute.generate {size=1+maxsize,ops=ops}
+      val _ = log ("bonus: generating queries\n")
       val inputs = BruteSolve.get_inputs biggest_progs
       val pairs = ListPair.zip (inputs, ServerIO.eval inputs)
                     : (Word64.word * Word64.word) list
@@ -112,6 +114,7 @@ struct
         end
 
       (**** Generate candidate programs. ****)
+      val _ = log ("bonus: generating candidate programs\n")
 
       (* We need to keep them in different size categories to optmz to avoid
        * trying g/h pairs with both of the maxsize, which would be too big.
@@ -131,6 +134,7 @@ struct
       val fs  = List.map (fn x => generate_and1   x) size_categories
 
       (**** Find all pairs of g/h candidates. ****)
+      val _ = log ("bonus: building g/h pairs\n")
 
       (* Note that each slot in the list contains all programs of sizes less
        * than that slot's size, too, so we only pair up against one slot. *)
@@ -153,8 +157,10 @@ struct
       (* The last slot has programs of all sizes.
        * Without loss of general fantasy, 'g' is not smaller than 'h'. *)
       val candidate_pairs = foldr find_pairs [] $ List.last ghs
+      val _ = log ("bonus: found "^(Int.toString $ length candidate_pairs)^" potential pairs\n")
 
       (**** Find matching segregators f for each g/h candidate pair. ****)
+      val _ = log ("bonus: searching for segregator functions\n")
 
       fun find_segregators ((gh as (Lambda (xg,eg), Lambda (xh,eh)),(gsize,hsize)),
                             whole_progs) =
