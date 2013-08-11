@@ -9,8 +9,8 @@ struct
 
   fun mapi f l = map f (ListPair.zip (List.tabulate (length l, fn x => x), l));
 
-  fun revappend [] ys = ys
-    | revappend (x::xs) ys = revappend xs (x::ys)
+  fun revappend ([],ys) = ys
+    | revappend ((x::xs),ys) = revappend (xs,(x::ys))
 
   (* match_choice attempts to match a program from a pregenerated list to a
      list of correct outputs.  In particular, it returns a list of fs such that:
