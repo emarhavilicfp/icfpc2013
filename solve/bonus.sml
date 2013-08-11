@@ -5,25 +5,15 @@ struct
   infixr 0 $
   fun f $ x = f x
 
-  fun findpairs ([] : (BV.program * BitVec.t) list) : (BV.program * BV.program) list = []
-    | findpairs (x::rest) =
-    let
-      fun outerLoop (curProg,curWec) [] curAcc = curAcc
-        | outerLoop (curProg,curWec) (rest as (next::restrest)) curAcc =
-          let
-            fun inner ((otherProg,otherWec), acc) =
-              if BitVec.orFills(curWec, otherWec) then
-                (curProg, otherProg)::acc
-              else acc
-            val newAcc = foldr inner curAcc rest
-          in
-            outerLoop next restrest newAcc
-          end
-    in
-      outerLoop x rest []
-    end
+  fun mapi f l = map f $ ListPair.zip (List.tabulate (length l, fn x => x), l);
 
   val minsize = 5 (* Believed minimum size of f, g, or h. *)
+
+  (* TODO joshua *)
+  fun find_segregator (pairs: (Word64.word * Word64.word) list)
+                      (gprog: BV.program, hprog: BV.program)
+                      (possible_fs: BV.program list) : BV.program list =
+        raise Fail "unimplemented"
 
   fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
     | solve minsize (spec: Solver.spec) : unit =
@@ -78,12 +68,47 @@ struct
                   List.map give_wector $ Brute.generate {size=1+x,ops=ops}) size_cats
       val fs  = List.map (fn x => Brute.generate_and1   {size=1+x,ops=ops}) size_cats
 
-      (* Inner loop. Repeat finding candidate g/h pairs (with f segregators),
+      (**** Inner loop. ****)
+
+      (* Repeat finding candidate g/h pairs (with f segregators),
        * and getting counterexamples from the server, until we get it, or we run
        * out (in which case we are left to assume our minsize was too big). *)
       fun solve_space ghs =
         let
-          val shit = ()
+          (**** Find all pairs of g/h candidates. ****)
+
+          (* Note that each slot in the list contains all programs of sizes less
+           * than that slot's size, too, so we only pair up against one slot. *)
+          fun find_pairs ((g as (gprog:BV.program,gwec:BitVec.t)), candidates)
+                : ((BV.program * BV.program) * (int * int)) list =
+            let
+              val gsize = size gprog - 1 (* strip g's outer lambda *)
+              val max_h_size = other_size gsize
+              fun does_h_match ((hprog,hwec), candidates) =
+                if BitVec.orFills(hwec,gwec) then
+                  let val hsize = size hprog - 1 (* likewise outer lambda *)
+                  in ((gprog,hprog),(gsize,hsize))::candidates
+                  end
+                else candidates
+            in
+              (* Pick hs from the slot in the list that has programs no bigger
+               * than the max allowable size for h given g's size. *)
+              foldr does_h_match candidates $ List.nth (ghs, max_h_size-minsize)
+            end
+          (* The last slot has programs of all sizes.
+           * Without loss of general fantasy, 'g' is not smaller than 'h'. *)
+          val candidates = foldr find_pairs [] $ List.last ghs
+
+          (**** Find matching segregators f for each g/h candidate pair. ****)
+          fun find_segregators ((gh,(gsize,hsize)), candidates) =
+            let
+              val max_f_size = segr_size gsize hsize
+              val matching_fs =
+                    find_segregator pairs gh $ List.nth (fs, max_f_size-minsize)
+            in
+              raise Fail "unimplemented" (* revappend map ... *)
+            end
+          val candidate_triples = foldr find_segregators [] candidates
         in
           raise Fail "unimplemented"
         end
