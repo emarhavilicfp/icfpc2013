@@ -25,6 +25,8 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 	lang/bv.lex.sml
 	lang/bv.grm.sml
 
+    util/univariate.sml
+
 	top/flags.sml
 	top/solver.sml
 	top/io.sml

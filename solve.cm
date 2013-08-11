@@ -58,6 +58,8 @@ Group is
     lang/elab.sml
     lang/test-util.sml
 
+    util/univariate.sml
+
 	top/solver.sml
 
 	top/io.sml
