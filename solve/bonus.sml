@@ -144,7 +144,8 @@ struct
       val _ = log ("bonus: generated "^(Sd num_ghs)^" g/h candidate programs\n")
       val _ = log ("bonus: generating candidate f conditions\n")
       val fs  = List.map (fn x => generate_and1   x) size_categories
-      val _ = log ("bonus: generated "^(Sdl fs)^" f candidate programs\n")
+      val num_fs = foldr (fn (l,x) => List.length l + x) 0 fs
+      val _ = log ("bonus: generated "^(Sl num_fs)^" f candidate programs\n")
 
       (**** Find all pairs of g/h candidates. ****)
       val _ = log ("bonus: building g/h pairs\n")
@@ -188,10 +189,16 @@ struct
       (**** Find matching segregators f for each g/h candidate pair. ****)
       val _ = log ("bonus: searching for segregator functions\n")
 
+      exception Reduce of BV.program list
+      val last = ref 0
       fun find_segregators ((gh as (Lambda (xg,eg), Lambda (xh,eh)),(gsize,hsize)),
                             whole_progs) =
         let
           val _ = Assert.assert "xg xh aren't the same" (xg = xh)
+          val _ =
+            if length whole_progs > 250000
+            then raise Reduce whole_progs
+            else ()
           val max_f_size = (* As in find_pairs, smaller ones are generated. *)
             segr_size (Int.max (minsize, gsize)) (Int.max (minsize, hsize))
           val (matching_fs_gh, matching_fs_hg) =
@@ -205,13 +212,44 @@ struct
           (* Got here. *)
           val whole_progs_gh = List.map make_fgh matching_fs_gh
           val whole_progs_hg = List.map make_fhg matching_fs_hg
+          val new = revappend (whole_progs_gh, revappend (whole_progs_hg, whole_progs))
+          val _ =
+            if (length new - !last) > 10000
+            then (log ("bonus: find_segregators: total "^
+                       (Sd (length new))^"\n"); last := (length new))
+            else ()
         in
-          revappend (whole_progs_gh, revappend (whole_progs_hg, whole_progs))
+          new
         end
-
-      val candidate_progs = foldr find_segregators [] candidate_pairs
+      
+      exception ActuallyItWasFine of BV.program list
+      (* Okay, we came up with too many options.  Try to reduce a little. *)
+      fun doreduce progs =
+        let
+          val _ = log ("bonus: too many -- trying to come up with more test vectors\n")
+          val disambigs = BruteSolve.ndisambig progs (!Flags.nquestions)
+          val newvecs =
+            case disambigs
+            of l as (_::_) => ListPair.zip (l, ServerIO.eval l)
+            
+               (* OK, we couldn't find a disambiguator -- just ask the server about the first one. *)
+             | nil =>
+               case ServerIO.guess (List.nth (progs, 0))
+               
+                  (* Well, then! *)
+               of ServerIO.RIGHT => raise ActuallyItWasFine progs
+                  (* Just add one more test vector that the server gives us. *)
+                | ServerIO.WRONG {input = inp, exp = exp, ...} => [(inp, exp)]
+          val _ = log ("bonus: found "^(Sdl newvecs)^" more test vectors\n")
+        in
+          revappend (newvecs, pairs)
+        end
+          
     in
-      candidate_progs
+      foldr find_segregators [] candidate_pairs
+        handle Reduce ps =>
+          solve_with_tvecs spec minsize biggest_progs (doreduce ps)
+        handle ActuallyItWasFine ps => ps
     end
 
   fun solve 0 _ = raise Fail "Minsize became too min. We suck. :("
