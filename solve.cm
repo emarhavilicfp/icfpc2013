@@ -12,10 +12,11 @@ Group is
 	util/flag.sml
 	util/symbol.sml
 	util/errormsg.sml
-        util/safe-io.sml
-        util/word32.sml
+    util/safe-io.sml
+    util/word32.sml
 	util/mersenne-twister-sig.sml
 	util/mersenne-twister.sml
+    util/bitvec.sml
 
 	top/flags.sml
 
