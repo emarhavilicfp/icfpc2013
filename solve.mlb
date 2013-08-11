@@ -17,6 +17,8 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 	util/mersenne-twister.sml
 
 	lang/parsestate.sml
+	lang/parse-target.sml
+
 	lang/bv.sml
 	lang/bv.grm.sig
 	lang/bv.lex.sml
@@ -26,12 +28,14 @@ $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 	top/solver.sml
 	top/io.sml
 
+	lang/elab.sml
 	lang/parse.sml
+	lang/test-util.sml
 	lang/bv-test.sml
-    lang/evaluator.sml
+	lang/evaluator.sml
 
-    solve/brute.sml
-    solve/brute_solve.sml
+	solve/brute.sml
+	solve/brute_solve.sml
 
 	top/top.sml
 	top/top_mlton.sml
