@@ -1,0 +1,1 @@
+{"id":"DAIP68OCadAGl4GQpBSKtPSM","challenge":"(lambda (x_2) (if0 (and (plus (shr4 (shr4 x_2)) x_2) 1) (plus 1 (plus x_2 x_2)) (xor 1 (shr4 (shr1 x_2)))))","size":19,"operators":["bonus","and","if0","plus","shr1","shr4","xor"]}

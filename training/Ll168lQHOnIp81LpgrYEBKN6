@@ -1,0 +1,1 @@
+{"id":"Ll168lQHOnIp81LpgrYEBKN6","challenge":"(lambda (x_13409) (fold x_13409 0 (lambda (x_13409 x_13410) (if0 (shr1 (not x_13410)) (not x_13409) x_13409))))","operators":["if0","not","shr1","tfold"],"size":12}

@@ -1,0 +1,1 @@
+{"challenge":"(lambda (x_9) (if0 (and (plus (shr16 (shr16 (shl1 x_9))) (shr16 x_9)) 1) (plus x_9 (shl1 (and (shr4 x_9) x_9))) (plus 1 (plus x_9 x_9))))","size":23,"id":"mr6oykHyS76vgzBe3M00mQX5","operators":["bonus","and","if0","plus","shl1","shr16","shr4"]}

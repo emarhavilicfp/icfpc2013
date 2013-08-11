@@ -1,0 +1,1 @@
+{"id":"yiedFYj0MNNhxi7ioCSV7SIn","challenge":"(lambda (x_2) (if0 (and (and (shr4 (shr16 x_2)) x_2) 1) (plus x_2 (plus x_2 x_2)) (shl1 (plus (shr1 x_2) (shr16 x_2)))))","operators":["bonus","and","if0","plus","shl1","shr1","shr16","shr4"],"size":20}
