@@ -101,7 +101,7 @@ struct
           (prog, final_wector)
         end
 
-      (**** Generate candidates. ****)
+      (**** Generate candidate programs. ****)
 
       (* We need to keep them in different size categories to optmz to avoid
        * trying g/h pairs with both of the maxsize, which would be too big.
@@ -112,53 +112,56 @@ struct
                   List.map give_wector $ Brute.generate {size=1+x,ops=ops}) size_cats
       val fs  = List.map (fn x => Brute.generate_and1   {size=1+x,ops=ops}) size_cats
 
-      (**** Inner loop. ****)
+      (**** Find all pairs of g/h candidates. ****)
 
-      (* Repeat finding candidate g/h pairs (with f segregators),
-       * and getting counterexamples from the server, until we get it, or we run
-       * out (in which case we are left to assume our minsize was too big). *)
-      fun solve_space ghs =
+      (* Note that each slot in the list contains all programs of sizes less
+       * than that slot's size, too, so we only pair up against one slot. *)
+      fun find_pairs ((g as (gprog:BV.program,gwec:BitVec.t)), candidates)
+            : ((BV.program * BV.program) * (int * int)) list =
         let
-          (**** Find all pairs of g/h candidates. ****)
-
-          (* Note that each slot in the list contains all programs of sizes less
-           * than that slot's size, too, so we only pair up against one slot. *)
-          fun find_pairs ((g as (gprog:BV.program,gwec:BitVec.t)), candidates)
-                : ((BV.program * BV.program) * (int * int)) list =
-            let
-              val gsize = size gprog - 1 (* strip g's outer lambda *)
-              val max_h_size = other_size gsize
-              fun does_h_match ((hprog,hwec), candidates) =
-                if BitVec.orFills(hwec,gwec) then
-                  let val hsize = size hprog - 1 (* likewise outer lambda *)
-                  in ((gprog,hprog),(gsize,hsize))::candidates
-                  end
-                else candidates
-            in
-              (* Pick hs from the slot in the list that has programs no bigger
-               * than the max allowable size for h given g's size. *)
-              foldr does_h_match candidates $ List.nth (ghs, max_h_size-minsize)
-            end
-          (* The last slot has programs of all sizes.
-           * Without loss of general fantasy, 'g' is not smaller than 'h'. *)
-          val candidates = foldr find_pairs [] $ List.last ghs
-
-          (**** Find matching segregators f for each g/h candidate pair. ****)
-          fun find_segregators ((gh,(gsize,hsize)), candidates) =
-            let
-              val max_f_size = segr_size gsize hsize
-              val matching_fs =
-                    match_choice pairs gh $ List.nth (fs, max_f_size-minsize)
-            in
-              raise Fail "unimplemented" (* revappend map ... *)
-            end
-          val candidate_triples = foldr find_segregators [] candidates
+          val gsize = size gprog - 1 (* strip g's outer lambda *)
+          val max_h_size = other_size gsize
+          fun does_h_match ((hprog,hwec), candidates) =
+            if BitVec.orFills(hwec,gwec) then
+              let val hsize = size hprog - 1 (* likewise outer lambda *)
+              in ((gprog,hprog),(gsize,hsize))::candidates
+              end
+            else candidates
         in
-          raise Fail "unimplemented"
+          (* Pick hs from the slot in the list that has programs no bigger
+           * than the max allowable size for h given g's size. *)
+          foldr does_h_match candidates $ List.nth (ghs, max_h_size-minsize)
         end
+      (* The last slot has programs of all sizes.
+       * Without loss of general fantasy, 'g' is not smaller than 'h'. *)
+      val candidate_pairs = foldr find_pairs [] $ List.last ghs
+
+      (**** Find matching segregators f for each g/h candidate pair. ****)
+
+      fun find_segregators ((gh as (Lambda (xg,eg), Lambda (xh,eh)),(gsize,hsize)),
+                            whole_progs) =
+        let
+          val _ = Assert.assert "xg xh aren't the same" $ xg = xh
+          val max_f_size = segr_size gsize hsize
+          val (matching_fs_gh, matching_fs_hg) =
+                match_choice pairs gh $ List.nth (fs, max_f_size-minsize)
+          (* Function to glue all 3 together, with 'g' in the true branch. *)
+          fun make_fgh (Lambda(xf,ef)) =
+            (Assert.assert "xf/xg/xh" (xf = xg); Lambda(xf, Ifz(ef,eg,eh)))
+          (* Function to glue all 3 together, with 'h' in the true branch. *)
+          fun make_fhg (Lambda(xf,ef)) =
+            (Assert.assert "xf/xh/xg" (xf = xg); Lambda(xf, Ifz(ef,eh,eg)))
+          (* Got here. *)
+          val whole_progs_gh = List.map make_fgh matching_fs_gh
+          val whole_progs_hg = List.map make_fgh matching_fs_gh
+        in
+          revAppend (whole_progs_gh, revAppend (whole_progs_hg, whole_progs))
+        end
+
+      val candidate_progs = foldr find_segregators [] candidate_pairs
     in
       (* Outer loop. Repeat with a laxer minsize if our estimate was too big. *)
-      if solve_space ghs then ()
+      if (raise Fail "unimplemented") candidate_progs then ()
       else (Flags.log ("Minsize " ^ Int.toString minsize ^ " not min enough.");
             solve (minsize-1) spec)
     end
