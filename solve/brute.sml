@@ -307,6 +307,23 @@ struct
     end
 
 
+  (* Generates a program and surrounds it with "e&1". Size does not account for
+   * the extra and-one, e.g., if size is given as 2, this can generate "\x.x&1". *)
+  fun generate_and1 (spec: Solver.spec) : program list =
+    let
+      val top_x = 0
+      val ops = #ops spec
+      val size = #size spec
+      val _ = Assert.assert "give me a positive program size you CLOWN" $ size > 0
+      val table = Array.array (size, [])
+      val do_fold = (List.exists (fn x => x = O_Fold) ops)
+      val exprs =
+        List.map (fn expr => Binop(And,expr,One)) $
+          generate_expr table do_fold [top_x] ops (size-1)
+    in
+      List.map (fn expr => Lambda (top_x, expr)) exprs
+    end
+
   (* tests *)
 
   fun test () = List.all (fn x => x) [
