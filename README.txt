@@ -6,6 +6,7 @@ uses a brute-force program enumerator as the basic building block.
 Our language of choice is Standard ML.
 
 I. Enumerator.
+--------------
 
 The enumerator takes as input a maximum size, and generates a list of
 all distinct programs with that many or fewer AST nodes. It also
@@ -36,6 +37,7 @@ number of generated programs by about a factor of 2.
 The brute-force enumerator can be found in solve/brute.sml.
 
 II. Solver.
+-----------
 
 The brute solver proceeds by enumerating and pruning in the following
 manner:
@@ -71,6 +73,7 @@ in smaller form.
 The general solver can be found in solve/brute-solve.sml.
 
 III. Bonus solver.
+------------------
 
 The bonus solver is a specialized version of the general solver tuned
 for the structure of bonus problems. We noticed that all bonus problems
@@ -167,3 +170,48 @@ requesting new test vectors earlier if it appeared that there was to be a
 combinatorial explosion; unfortunately, it was not as successful as we had
 hoped, and required a lot of recomputation (mainly as an artifact of how we
 implemented it).
+
+IV. Team and configuration.
+---------------------------
+
+Emarhavil Heavy Industries this year was composed of:
+
+  Ben Blum <bblum@andrew.cmu.edu>; Carnegie Mellon University; Mozilla
+                                   Corporation
+  Eric Faust <efaustbmo@gmail.com>; Mozilla Corporation
+  Glenn Willen <gwillen@nerdnet.org>
+  Joshua Wise <joshua@joshuawise.com>; NVIDIA Corporation
+  Kevin Murphy <kemurphy.cmu@gmail.com>; NVIDIA Corporation
+  Roy Frostig <rf@cs.stanford.edu>; Stanford
+
+Our thanks to Mozilla Corporation, whose space and food were used during the
+production of this entry.
+
+Our primary computational resources were:
+
+  a mid-2012 Retina MacBook Pro with four 2.7GHz Ivy Bridge cores and 16GB
+  of RAM;
+
+  a custom-built desktop with 32GB of RAM, and four 3.5GHz Haswell cores.
+
+Some consideration was given to using other large machines available, such
+as Amazon EC2 resources ($3.50/hr for 244 GiB of memory, and 88 EC2 Compute
+units), or the Carnegie Mellon PDL cluster.  Ultimately, we did not find
+time to go as far as to scale our algorithms up to the point where they
+could make use of such large machines.
+
+Our tools were written primarily in Standard ML, with some glue written in
+Ruby for tasks considered too unpleasant for a functional language.  Please
+do not ask about which functional language we chose, or why.  It was the
+source of great strife.
+
+We used SML/NJ as a REPL for development, but almost all (if not all) server
+submissions took place through MLton.  We stumbled across at least one MLton
+bug, in which MLton generated executables that would terminate with SIGBUS
+in some circumstances when built with -codegen native on amd64/Darwin;
+-codegen c was used to work around this.
+
+We considered using MultiMLton to leverage the multicore parallelism
+available, but ultimately did not have time to go beyond an exploratory
+phase.  I conject that explicit support for exposing memory-level
+parallelism would have helped to accelerate this program.
