@@ -68,6 +68,8 @@ trick works *really* well on large-instance problems.  As it turns
 out, at least in this contest, many large functions are representable
 in smaller form.
 
+The general solver can be found in solve/brute-solve.sml.
+
 III. Bonus solver.
 
 The bonus solver is a specialized version of the general solver tuned
