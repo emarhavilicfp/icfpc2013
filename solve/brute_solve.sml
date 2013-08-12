@@ -143,7 +143,7 @@ struct
       val choices = Brute.generate {size = i, ops = (#ops a)}
     in
       server choices
-        handle NoSolution => (log "no solution of that size")
+        handle NoSolution => (log "no solution of that size\n")
     end
 
   fun solve_upto_size a 0 = ()
