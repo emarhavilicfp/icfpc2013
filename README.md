@@ -85,4 +85,85 @@ certain other size (9)). So the bonus solver only asks the brute-forcer
 for programs within that range of sizes.
 
 The heart of the bonus solver is perhaps the most clever part of our
-submission. ... TODO ...
+submission.  To start with, a little bit of terminology --
+
+We shall define the main function under test (i.e., the function that we
+wish to submit) as F(x), such that:
+
+  F(x) = if0 f(x)
+         then g(x)
+         else h(x)
+
+The critical insight was that it is possible to separate f(x), g(x), and
+h(x) and solve for them "in a vacuum", considering only the function space
+FS(fgh), rather than the master function space FS(F) = FS(f) * FS(fh) *
+FS(gh).
+
+We do this first by ignoring f(x), and focusing only on g(x) and h(x).  We
+enumerate the function space FS(gh), and propose some test vectors, just
+like we do with the standard solver.  However, where we would normally
+eliminate /any/ function gh(x) that does not match all test vectors, we
+instead construct a matrix of functions gh(x) x test vector success TV_i. 
+More concretely, consider that we have only four functions, gh_0 through
+gh_3, and we have five test vectors, we can construct the following matrix,
+where we place a 't' in a field where the function passes the test vector:
+
+     TV_0  TV_1  TV_2  TV_3  TV_4
+gh_0    t     t                 t
+gh_1          t     t
+gh_2    t                  t    t
+gh_3    t           t      t    t
+
+We now have a cover problem: we wish to find pairs of functions gh_i and
+gh_j for which forall n in TV_n, at least one of gh_i or gh_j passes TV_n. 
+Such pairs gh_i and gh_j are "candidate pairs", since they *could* be the
+functions g(x) or h(x).
+
+[Sidebar: implementation.
+
+  We implemented the cover problem initially in the well-known
+  "dumb-as-nails" fashion.  Under the assumption that "n^2 is okay if you
+  have a small enough n", we simply looked at all gh_i and gh_j pairwise,
+  filtering only by which would result in an appropriate program size.  This
+  worked surprisingly well for small bonus programs, allowing us to clear
+  most of the first two smallest quantities.
+
+  As a surprise to none, this did not scale.  We solved this by partitioning
+  on the first column.  Any function gh_i that has TV_n failing can *only* be
+  paired with a function gh_j that has TV_n passing (although a function
+  gh_i that has TV_n passing can be paired with any gh_j at all).  This
+  drastically reduced the "n^2-ness"; the cover matrix is incredibly sparse,
+  which means that "most" functions will not have TV_n passing for any given
+  TV_n.  So, for any function gh_i that has TV_n failing, only a small
+  number need be checked; and conversely, there are only a small number of
+  functions gh_i that have TV_n passing, and therefore need to cross-check
+  all other functions.
+  
+  This could, presumably, be extended to a larger partition scheme, but
+  doing so seems an exercise only in ego improvement, not performance
+  improvement.
+  
+  ]
+  
+Once we have determined a list of all candidate pairs {g(x), h(x)}, a
+critical question remains: what the f?  As it turns out, once we know a bit
+vector of which test vectors pass on each function, we can determine a set
+of inputs and outputs for what f(x) must satisfy -- essentially,
+synthesizing our own test vectors.  Once we have those, we can narrow down
+the function space FS(f) to generate all of the candidate f(x)s for any
+given pair {g(x), h(x)}.  (This is, of course, not a pure cross product!)
+
+At this point, we now have a list of program-pieces, {f(x), g(x), and h(x);
+these can be simply plugged into F(x) (defined above), and iteratively
+tested and narrowed down using the algorithm discussed in II.
+
+One pain point was that the bonus solver only saved us from combinatorial
+explosion by a few ply; additionally, it has some n^2 components that
+dominate.  Future work might include more advanced test-pattern generation,
+allowing to narrow the space FS(gh) more aggressively, generating fewer
+{g(x), h{x)} pairs.  (The operation that created a list of potential f(x)s
+for a {g(x), h(x)} pair was fairly expensive.)  We began down the path of
+requesting new test vectors earlier if it appeared that there was to be a
+combinatorial explosion; unfortunately, it was not as successful as we had
+hoped, and required a lot of recomputation (mainly as an artifact of how we
+implemented it).
