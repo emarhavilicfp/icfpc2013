@@ -37,8 +37,36 @@ The brute-force enumerator can be found in solve/brute.sml.
 
 II. Solver.
 
-... TODO ...
+The brute solver proceeds by enumerating and pruning in the following
+manner:
 
+1. For a given spec (program size, operator set), use the enumerator
+   to generate a (possibly very large) candidate set of programs C.
+
+2. Sample random program input bitvectors.  Keep as X only those that
+   actually disambiguate at least two functions in C.
+
+   If the procedure for sampling X yields no points, we simply guess
+   an arbitrary function from C and let the server point us to a good
+   singleton starter for X.  Quite often, though, we cannot sample a
+   set of disambiguating inputs X because our remaining functions C
+   are all identical, so the arbitrary guess turns out to be a
+   solution, and we're done.
+
+3. Query the server with every point in X to get corresponding output
+   bitvectors Y.
+
+4. Keep all functions in C consistent with the server's target function
+   (i.e. giving the corresponding outputs in Y) on the inputs in X.
+
+5. If |C| = 1, submit the one remaining function.  Otherwise, keep
+   narowing by repeating from step 2.
+
+This entire routine is actually run with increasing program sizes in
+step 1 as a form of incredibly naive iterative deepening.  This extra
+trick works *really* well on large-instance problems.  As it turns
+out, at least in this contest, many large functions are representable
+in smaller form.
 
 III. Bonus solver.
 
