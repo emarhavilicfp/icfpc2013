@@ -27,15 +27,19 @@ struct
   fun map jobs = let
     val hosts = List.tabulate (List.length jobs, (fn x => x mod 64))
     val host_mappings = ListPair.zip (hosts, jobs)
-    val (_, wut) = mapAccum (fn (hjs, h) =>
-                          (let
-                            val (yes, no) = List.partition (fn (h', _) => h' = h) hjs
-                            val js = List.map (fn (f, s) => s) yes
-                          in 
-                            (no, (channel (), js))
-                          end)
-                          ) host_mappings (List.tabulate (64, (fn x => x)))
+    val (_, job_groups) =
+      mapAccum (fn (hjs, h) => let
+          val (yes, no) = List.partition (fn (h', _) => h' = h) hjs
+          val js = List.map (fn (f, s) => s) yes
+        in
+          (no, (channel (), js))
+        end) host_mappings (List.tabulate (64, (fn x => x)))
   in
-      List.concat (List.map (fn (ch, js) => let val _ = spawnHost (fn () => aSend (ch, List.map (MLton.Pacml.recv o par1) js)) in recv ch end) wut)
+      List.concat (List.map (fn (ch, js) =>
+        let
+          val _ = spawnHost (fn () => aSend (ch, List.map (MLton.Pacml.recv o par1) js))
+        in
+          recv ch
+        end) job_groups)
   end
 end
