@@ -147,7 +147,7 @@ struct
     end
 
   fun solve_upto_size a 0 = ()
-    | solve_upto_size a 1 = ()
+    | solve_upto_size a 6 = ()
     | solve_upto_size a n =
         let
           val _ = solve_upto_size a (n-1)
