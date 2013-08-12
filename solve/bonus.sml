@@ -44,7 +44,7 @@ struct
         List.map
           (fn SOME (0w0) => SOME (0w1 : Word64.word)
             | SOME (0w1) => SOME (0w0 : Word64.word)
-            | SOME (_) => raise Fail "shit"
+            | SOME (_) => raise Fail "bad value"
             | NONE => NONE
           )
           fmap

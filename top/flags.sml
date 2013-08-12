@@ -11,7 +11,7 @@ sig
   val nquestions : int ref
   val seed : Word32.word ref
   
-  val reset : unit -> unit	(* Anus... *)
+  val reset : unit -> unit
   
   val log : string -> unit
 end
